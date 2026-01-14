@@ -1,0 +1,7 @@
+# Decision Maker Agent Prompt
+
+TODO: This prompt will be used when we integrate Neuron with an LLM to replace the current stub.
+
+The prompt should decide whether to escalate the incident to development:
+- shouldEscalate: boolean
+- decisionReason: reason for the decision (for explainability)

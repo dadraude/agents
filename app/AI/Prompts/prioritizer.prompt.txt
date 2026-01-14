@@ -1,0 +1,9 @@
+# Prioritizer Agent Prompt
+
+TODO: This prompt will be used when we integrate Neuron with an LLM to replace the current stub.
+
+The prompt should compute the priority based on:
+- impact: 1-5
+- urgency: 1-5
+- severity: 1-5
+- priorityScore: weighted calculation

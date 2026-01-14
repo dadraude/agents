@@ -1,0 +1,838 @@
+# Capstone Multiagent (Laravel 12 net) — Skeleton per Cursor
+
+Aquest document assumeix que **ja tens un projecte Laravel 12 net creat**.  
+L’objectiu és que puguis **copiar/enganxar** aquest esquelet a Cursor i començar a implementar el workflow multiagent:
+
+**Interpreter → Classifier → Validator → Prioritizer → Decision Maker → Linear Writer**
+
+Inclou:
+- Estructura de carpetes
+- Estat compartit (`IncidentState`)
+- Orquestrador (`IncidentWorkflow`)
+- Agents (stubs) end-to-end
+- Integració Linear (GraphQL) + “dry run” si no hi ha API key
+- Endpoint API per provar-ho
+- Persistència opcional (runs)
+
+---
+
+## 0) Dependències (al teu Laravel 12)
+
+```bash
+composer require neuron-core/neuron-ai
+# Opcional: integració Laravel (si vols scaffolding/config extra)
+composer require neuron-core/neuron-laravel
+```
+
+> Nota: tot l’esquelet funciona **sense cridar cap LLM** (agents stub). Neuron el faràs servir quan vulguis substituir stubs per prompts+LLM.
+
+---
+
+## 1) Config de serveis (Linear)
+
+### 1.1 `config/services.php` (afegir)
+
+```php
+'linear' => [
+    'api_key' => env('LINEAR_API_KEY'),
+    'team_id' => env('LINEAR_TEAM_ID'),
+],
+```
+
+### 1.2 `.env` (afegir)
+
+```env
+LINEAR_API_KEY=
+LINEAR_TEAM_ID=
+```
+
+---
+
+## 2) Estructura de carpetes a crear
+
+Crea aquestes carpetes dins el teu repo Laravel 12:
+
+```
+app/
+  AI/
+    Contracts/
+      AgentInterface.php
+    Orchestrator/
+      IncidentState.php
+      IncidentWorkflow.php
+    Agents/
+      InterpreterAgent.php
+      ClassifierAgent.php
+      ValidatorAgent.php
+      PrioritizerAgent.php
+      DecisionMakerAgent.php
+      LinearWriterAgent.php
+    Prompts/
+      interpreter.prompt.txt
+      classifier.prompt.txt
+      validator.prompt.txt
+      prioritizer.prompt.txt
+      decision_maker.prompt.txt
+      linear_writer.prompt.txt
+
+  Integrations/
+    Linear/
+      LinearClient.php
+      LinearMapper.php
+```
+
+---
+
+## 3) Contracte d’Agents
+
+### 3.1 `app/AI/Contracts/AgentInterface.php`
+
+```php
+<?php
+
+namespace App\AI\Contracts;
+
+use App\AI\Orchestrator\IncidentState;
+
+interface AgentInterface
+{
+    public function handle(IncidentState $state): IncidentState;
+
+    public function name(): string;
+}
+```
+
+---
+
+## 4) Estat compartit
+
+### 4.1 `app/AI/Orchestrator/IncidentState.php`
+
+```php
+<?php
+
+namespace App\AI\Orchestrator;
+
+class IncidentState
+{
+    public string $rawText;
+
+    // Interpreter
+    public ?string $summary = null;
+    public ?string $intent = null;
+    public array $entities = [];
+
+    // Classifier
+    public ?string $type = null;        // bug | question | feature | other
+    public ?string $area = null;        // pos | kds | backoffice | loyalty | infra | other
+    public ?bool $devRelated = null;
+
+    // Validator
+    public bool $isSufficient = true;
+    public array $missingInfo = [];     // ["steps_to_reproduce", "environment_version", ...]
+
+    // Prioritizer
+    public ?int $impact = null;         // 1-5
+    public ?int $urgency = null;        // 1-5
+    public ?int $severity = null;       // 1-5
+    public ?float $priorityScore = null;
+
+    // Decision
+    public bool $shouldEscalate = false;
+    public ?string $decisionReason = null;
+
+    // Linear
+    public ?string $linearIssueId = null;
+    public ?string $linearIssueUrl = null;
+
+    // Trace
+    public array $trace = [];
+
+    public function __construct(string $rawText)
+    {
+        $this->rawText = $rawText;
+    }
+
+    public function addTrace(string $agentName, array $data): void
+    {
+        $this->trace[] = [
+            'agent' => $agentName,
+            'data' => $data,
+            'ts' => date('c'),
+        ];
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'rawText' => $this->rawText,
+
+            'summary' => $this->summary,
+            'intent' => $this->intent,
+            'entities' => $this->entities,
+
+            'type' => $this->type,
+            'area' => $this->area,
+            'devRelated' => $this->devRelated,
+
+            'isSufficient' => $this->isSufficient,
+            'missingInfo' => $this->missingInfo,
+
+            'impact' => $this->impact,
+            'urgency' => $this->urgency,
+            'severity' => $this->severity,
+            'priorityScore' => $this->priorityScore,
+
+            'shouldEscalate' => $this->shouldEscalate,
+            'decisionReason' => $this->decisionReason,
+
+            'linearIssueId' => $this->linearIssueId,
+            'linearIssueUrl' => $this->linearIssueUrl,
+
+            'trace' => $this->trace,
+        ];
+    }
+}
+```
+
+---
+
+## 5) Orquestrador (pipeline determinista)
+
+### 5.1 `app/AI/Orchestrator/IncidentWorkflow.php`
+
+```php
+<?php
+
+namespace App\AI\Orchestrator;
+
+use App\AI\Agents\ClassifierAgent;
+use App\AI\Agents\DecisionMakerAgent;
+use App\AI\Agents\InterpreterAgent;
+use App\AI\Agents\LinearWriterAgent;
+use App\AI\Agents\PrioritizerAgent;
+use App\AI\Agents\ValidatorAgent;
+use App\Models\IncidentRun;
+
+class IncidentWorkflow
+{
+    public function run(string $text): array
+    {
+        $state = new IncidentState($text);
+
+        // 1) Interpreter
+        $state = app(InterpreterAgent::class)->handle($state);
+
+        // 2) Classifier
+        $state = app(ClassifierAgent::class)->handle($state);
+
+        // 3) Validator
+        $state = app(ValidatorAgent::class)->handle($state);
+
+        if (!$state->isSufficient) {
+            $status = 'needs_more_info';
+            $this->persistIfAvailable($text, $state, $status);
+
+            return [
+                'status' => $status,
+                'state' => $state->toArray(),
+            ];
+        }
+
+        // 4) Prioritizer
+        $state = app(PrioritizerAgent::class)->handle($state);
+
+        // 5) Decision maker
+        $state = app(DecisionMakerAgent::class)->handle($state);
+
+        // 6) Linear writer (si procedeix)
+        if ($state->shouldEscalate) {
+            $state = app(LinearWriterAgent::class)->handle($state);
+            $status = 'escalated';
+        } else {
+            $status = 'processed';
+        }
+
+        $run = $this->persistIfAvailable($text, $state, $status);
+
+        return [
+            'status' => $status,
+            'run_id' => $run?->id,
+            'state' => $state->toArray(),
+        ];
+    }
+
+    private function persistIfAvailable(string $text, IncidentState $state, string $status): ?IncidentRun
+    {
+        if (!class_exists(IncidentRun::class)) {
+            return null; // Si no has creat el model/migration, no passa res.
+        }
+
+        return IncidentRun::create([
+            'input_text' => $text,
+            'state_json' => $state->toArray(),
+            'trace_json' => $state->trace,
+            'status' => $status,
+            'linear_issue_id' => $state->linearIssueId,
+            'linear_issue_url' => $state->linearIssueUrl,
+        ]);
+    }
+}
+```
+
+---
+
+## 6) Agents (stubs end-to-end)
+
+### 6.1 `app/AI/Agents/InterpreterAgent.php`
+
+```php
+<?php
+
+namespace App\AI\Agents;
+
+use App\AI\Contracts\AgentInterface;
+use App\AI\Orchestrator\IncidentState;
+
+class InterpreterAgent implements AgentInterface
+{
+    public function name(): string { return 'Interpreter'; }
+
+    public function handle(IncidentState $state): IncidentState
+    {
+        $text = trim($state->rawText);
+
+        $state->summary = mb_substr($text, 0, 160);
+        $state->intent = $this->guessIntent($text);
+        $state->entities = $this->extractEntities($text);
+
+        $state->addTrace($this->name(), [
+            'summary' => $state->summary,
+            'intent' => $state->intent,
+            'entities' => $state->entities,
+        ]);
+
+        return $state;
+    }
+
+    private function guessIntent(string $text): string
+    {
+        $t = mb_strtolower($text);
+        if (str_contains($t, 'error') || str_contains($t, 'falla') || str_contains($t, 'crash')) return 'report_issue';
+        if (str_contains($t, 'com ') || str_contains($t, 'cómo') || str_contains($t, 'how')) return 'question';
+        if (str_contains($t, 'voldria') || str_contains($t, 'm\'agradaria') || str_contains($t, 'feature')) return 'feature_request';
+        return 'unknown';
+    }
+
+    private function extractEntities(string $text): array
+    {
+        $entities = [];
+        $keywords = ['kds', 'pos', 'backoffice', 'back-office', 'loyalty', 'linear', 'verifactu', 'kubernetes', 'gcp'];
+        $t = mb_strtolower($text);
+
+        foreach ($keywords as $k) {
+            if (str_contains($t, $k)) $entities[] = $k;
+        }
+
+        return array_values(array_unique($entities));
+    }
+}
+```
+
+### 6.2 `app/AI/Agents/ClassifierAgent.php`
+
+```php
+<?php
+
+namespace App\AI\Agents;
+
+use App\AI\Contracts\AgentInterface;
+use App\AI\Orchestrator\IncidentState;
+
+class ClassifierAgent implements AgentInterface
+{
+    public function name(): string { return 'Classifier'; }
+
+    public function handle(IncidentState $state): IncidentState
+    {
+        $t = mb_strtolower($state->rawText);
+
+        // type
+        if (str_contains($t, 'error') || str_contains($t, 'falla') || str_contains($t, 'crash')) {
+            $state->type = 'bug';
+        } elseif (str_contains($t, 'com ') || str_contains($t, 'cómo') || str_contains($t, 'how')) {
+            $state->type = 'question';
+        } elseif (str_contains($t, 'm\'agradaria') || str_contains($t, 'voldria') || str_contains($t, 'feature')) {
+            $state->type = 'feature';
+        } else {
+            $state->type = 'other';
+        }
+
+        // area
+        $state->area = 'other';
+        if (str_contains($t, 'kds')) $state->area = 'kds';
+        if (str_contains($t, 'pos')) $state->area = 'pos';
+        if (str_contains($t, 'backoffice') || str_contains($t, 'back-office')) $state->area = 'backoffice';
+        if (str_contains($t, 'loyalty') || str_contains($t, 'fidel')) $state->area = 'loyalty';
+        if (str_contains($t, 'kubernetes') || str_contains($t, 'gcp') || str_contains($t, 'load balancer')) $state->area = 'infra';
+
+        // devRelated
+        $state->devRelated = in_array($state->type, ['bug', 'feature'], true);
+
+        $state->addTrace($this->name(), [
+            'type' => $state->type,
+            'area' => $state->area,
+            'devRelated' => $state->devRelated,
+        ]);
+
+        return $state;
+    }
+}
+```
+
+### 6.3 `app/AI/Agents/ValidatorAgent.php`
+
+```php
+<?php
+
+namespace App\AI\Agents;
+
+use App\AI\Contracts\AgentInterface;
+use App\AI\Orchestrator\IncidentState;
+
+class ValidatorAgent implements AgentInterface
+{
+    public function name(): string { return 'Validator'; }
+
+    public function handle(IncidentState $state): IncidentState
+    {
+        $missing = [];
+
+        // Si és bug, demanar passos i entorn (heurístic)
+        if ($state->type === 'bug') {
+            if (!preg_match('/pas|passos|step|repro/i', $state->rawText)) $missing[] = 'steps_to_reproduce';
+            if (!preg_match('/ios|android|version|versi[oó]n|v\d+/i', $state->rawText)) $missing[] = 'environment_version';
+        }
+
+        $state->missingInfo = $missing;
+        $state->isSufficient = count($missing) === 0;
+
+        $state->addTrace($this->name(), [
+            'isSufficient' => $state->isSufficient,
+            'missingInfo' => $state->missingInfo,
+        ]);
+
+        return $state;
+    }
+}
+```
+
+### 6.4 `app/AI/Agents/PrioritizerAgent.php`
+
+```php
+<?php
+
+namespace App\AI\Agents;
+
+use App\AI\Contracts\AgentInterface;
+use App\AI\Orchestrator\IncidentState;
+
+class PrioritizerAgent implements AgentInterface
+{
+    public function name(): string { return 'Prioritizer'; }
+
+    public function handle(IncidentState $state): IncidentState
+    {
+        // Defaults
+        $impact = 3; $urgency = 3; $severity = 3;
+        $t = mb_strtolower($state->rawText);
+
+        // Señals de bloqueig operatiu
+        if (str_contains($t, 'no podem cobrar') || str_contains($t, 'no se puede cobrar') || str_contains($t, 'blocked')) {
+            $impact = 5; $urgency = 5; $severity = 5;
+        } elseif (str_contains($t, 'intermitent') || str_contains($t, 'sometimes') || str_contains($t, 'de vegades')) {
+            $impact = 3; $urgency = 3; $severity = 3;
+        }
+
+        if ($state->type === 'question') {
+            $severity = 2; $urgency = 2;
+        }
+
+        $state->impact = $impact;
+        $state->urgency = $urgency;
+        $state->severity = $severity;
+
+        $state->priorityScore = round(($impact * 0.4) + ($urgency * 0.35) + ($severity * 0.25), 2);
+
+        $state->addTrace($this->name(), [
+            'impact' => $state->impact,
+            'urgency' => $state->urgency,
+            'severity' => $state->severity,
+            'priorityScore' => $state->priorityScore,
+        ]);
+
+        return $state;
+    }
+}
+```
+
+### 6.5 `app/AI/Agents/DecisionMakerAgent.php`
+
+```php
+<?php
+
+namespace App\AI\Agents;
+
+use App\AI\Contracts\AgentInterface;
+use App\AI\Orchestrator\IncidentState;
+
+class DecisionMakerAgent implements AgentInterface
+{
+    public function name(): string { return 'DecisionMaker'; }
+
+    public function handle(IncidentState $state): IncidentState
+    {
+        $should = false;
+        $reason = 'Not escalated by default.';
+
+        // Regla: escalar si bug/feature i score alt
+        if (($state->type === 'bug' || $state->type === 'feature') && ($state->priorityScore ?? 0) >= 4.0) {
+            $should = true;
+            $reason = 'High priority bug/feature based on impact/urgency/severity.';
+        }
+
+        // També: bloqueig operatiu
+        $t = mb_strtolower($state->rawText);
+        if (str_contains($t, 'blocked') || str_contains($t, 'bloquejat') || str_contains($t, 'no podem cobrar')) {
+            $should = true;
+            $reason = 'User is blocked (payment/operations).';
+        }
+
+        $state->shouldEscalate = $should;
+        $state->decisionReason = $reason;
+
+        $state->addTrace($this->name(), [
+            'shouldEscalate' => $state->shouldEscalate,
+            'reason' => $state->decisionReason,
+        ]);
+
+        return $state;
+    }
+}
+```
+
+### 6.6 `app/AI/Agents/LinearWriterAgent.php`
+
+```php
+<?php
+
+namespace App\AI\Agents;
+
+use App\AI\Contracts\AgentInterface;
+use App\AI\Orchestrator\IncidentState;
+use App\Integrations\Linear\LinearClient;
+use App\Integrations\Linear\LinearMapper;
+
+class LinearWriterAgent implements AgentInterface
+{
+    public function __construct(
+        private readonly LinearClient $client,
+        private readonly LinearMapper $mapper,
+    ) {}
+
+    public function name(): string { return 'LinearWriter'; }
+
+    public function handle(IncidentState $state): IncidentState
+    {
+        // Dry run si no tens API key configurada
+        if (!$this->client->isConfigured()) {
+            $state->addTrace($this->name(), [
+                'dryRun' => true,
+                'message' => 'LINEAR_API_KEY missing. Skipping ticket creation.',
+            ]);
+            return $state;
+        }
+
+        $payload = $this->mapper->mapStateToIssuePayload($state);
+        $issue = $this->client->createIssue($payload);
+
+        $state->linearIssueId = $issue['id'] ?? null;
+        $state->linearIssueUrl = $issue['url'] ?? null;
+
+        $state->addTrace($this->name(), [
+            'created' => (bool) $state->linearIssueId,
+            'issue' => [
+                'id' => $state->linearIssueId,
+                'url' => $state->linearIssueUrl,
+                'identifier' => $issue['identifier'] ?? null,
+            ],
+            'error' => $issue['error'] ?? false,
+        ]);
+
+        return $state;
+    }
+}
+```
+
+---
+
+## 7) Integració Linear (GraphQL)
+
+### 7.1 `app/Integrations/Linear/LinearClient.php`
+
+```php
+<?php
+
+namespace App\Integrations\Linear;
+
+use Illuminate\Support\Facades\Http;
+
+class LinearClient
+{
+    public function isConfigured(): bool
+    {
+        return (bool) config('services.linear.api_key');
+    }
+
+    public function createIssue(array $payload): array
+    {
+        $apiKey = config('services.linear.api_key');
+
+        $mutation = <<<'GQL'
+mutation CreateIssue($input: IssueCreateInput!) {
+  issueCreate(input: $input) {
+    success
+    issue {
+      id
+      url
+      identifier
+      title
+    }
+  }
+}
+GQL;
+
+        $res = Http::withToken($apiKey)
+            ->post('https://api.linear.app/graphql', [
+                'query' => $mutation,
+                'variables' => ['input' => $payload],
+            ]);
+
+        if (!$res->successful()) {
+            return [
+                'error' => true,
+                'status' => $res->status(),
+                'body' => $res->json(),
+            ];
+        }
+
+        $data = $res->json('data.issueCreate.issue') ?? [];
+
+        return [
+            'id' => $data['id'] ?? null,
+            'url' => $data['url'] ?? null,
+            'identifier' => $data['identifier'] ?? null,
+            'title' => $data['title'] ?? null,
+        ];
+    }
+}
+```
+
+### 7.2 `app/Integrations/Linear/LinearMapper.php`
+
+```php
+<?php
+
+namespace App\Integrations\Linear;
+
+use App\AI\Orchestrator\IncidentState;
+
+class LinearMapper
+{
+    public function mapStateToIssuePayload(IncidentState $state): array
+    {
+        $teamId = config('services.linear.team_id');
+
+        $titlePrefix = strtoupper($state->type ?? 'INC');
+        $title = "{$titlePrefix}: " . ($state->summary ?? 'Incident');
+
+        $description = $this->buildDescription($state);
+
+        $payload = [
+            'title' => $title,
+            'description' => $description,
+        ];
+
+        if ($teamId) {
+            $payload['teamId'] = $teamId;
+        }
+
+        return $payload;
+    }
+
+    private function buildDescription(IncidentState $state): string
+    {
+        $lines = [];
+        $lines[] = "## Summary";
+        $lines[] = $state->summary ?? '(none)';
+        $lines[] = "";
+        $lines[] = "## Raw";
+        $lines[] = $state->rawText;
+        $lines[] = "";
+        $lines[] = "## Classification";
+        $lines[] = "- Type: " . ($state->type ?? 'n/a');
+        $lines[] = "- Area: " . ($state->area ?? 'n/a');
+        $lines[] = "- Dev related: " . (($state->devRelated === true) ? 'yes' : 'no');
+        $lines[] = "";
+        $lines[] = "## Priority";
+        $lines[] = "- Impact: " . ($state->impact ?? 'n/a');
+        $lines[] = "- Urgency: " . ($state->urgency ?? 'n/a');
+        $lines[] = "- Severity: " . ($state->severity ?? 'n/a');
+        $lines[] = "- Score: " . ($state->priorityScore ?? 'n/a');
+        $lines[] = "";
+        $lines[] = "## Decision";
+        $lines[] = "- Escalate: " . ($state->shouldEscalate ? 'yes' : 'no');
+        $lines[] = "- Reason: " . ($state->decisionReason ?? 'n/a');
+
+        return implode("\n", $lines);
+    }
+}
+```
+
+---
+
+## 8) Endpoint API (prova ràpida)
+
+### 8.1 `routes/api.php` (afegir)
+
+```php
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\AI\Orchestrator\IncidentWorkflow;
+
+Route::post('/incidents/process', function (Request $request, IncidentWorkflow $workflow) {
+    $text = (string) $request->input('text', '');
+    if (trim($text) === '') {
+        return response()->json(['error' => 'Missing text'], 422);
+    }
+
+    return response()->json($workflow->run($text));
+});
+```
+
+### 8.2 Prova
+
+```bash
+php artisan serve
+```
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/incidents/process \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"El POS falla en cobrar. Crash quan premo pagar. iOS 14.8. Passos: obrir comanda, pagar, peta."}'
+```
+
+---
+
+## 9) Persistència opcional (runs)
+
+Recomanat per demo/traçabilitat.
+
+```bash
+php artisan make:model IncidentRun -m
+```
+
+### 9.1 Migration (enganxa dins la migration creada)
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up(): void
+    {
+        Schema::create('incident_runs', function (Blueprint $table) {
+            $table->id();
+            $table->text('input_text');
+            $table->json('state_json')->nullable();
+            $table->json('trace_json')->nullable();
+            $table->string('status')->default('processed'); // processed | needs_more_info | escalated | failed
+            $table->string('linear_issue_id')->nullable();
+            $table->string('linear_issue_url')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('incident_runs');
+    }
+};
+```
+
+### 9.2 Model `app/Models/IncidentRun.php` (si no s’ha autogenerat així)
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class IncidentRun extends Model
+{
+    protected $fillable = [
+        'input_text',
+        'state_json',
+        'trace_json',
+        'status',
+        'linear_issue_id',
+        'linear_issue_url',
+    ];
+
+    protected $casts = [
+        'state_json' => 'array',
+        'trace_json' => 'array',
+    ];
+}
+```
+
+### 9.3 Migrar
+
+```bash
+php artisan migrate
+```
+
+---
+
+## 10) Roadmap curt per posar Neuron (LLM) de forma segura
+
+Quan tot funcioni end-to-end:
+
+1) **InterpreterAgent amb LLM**: retorna JSON `{ summary, intent, entities[] }`
+2) **ClassifierAgent amb LLM**: `{ type, area, devRelated }`
+3) Validator i Prioritizer: regles + LLM només si aporta valor
+4) Decision Maker: regles + LLM per justificació (explicabilitat)
+5) Linear mapping: labels/project/priority/assignee
+
+Recomanat:
+- `.env`: `AI_USE_LLM=true` per activar LLM gradualment
+- fallback a stub si el JSON no valida
+
+---
+
+## 11) Checklist final
+
+- [ ] `composer require neuron-core/neuron-ai`
+- [ ] `config/services.php` + `.env` Linear
+- [ ] Crear fitxers `app/AI/*` + `app/Integrations/Linear/*`
+- [ ] Afegir ruta `POST /api/incidents/process`
+- [ ] Provar amb curl (ha de respondre `status` i `trace`)
+- [ ] (Opcional) DB `incident_runs` + `php artisan migrate`
+
+Fi.

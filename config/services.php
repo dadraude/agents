@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'linear' => [
+        'api_key' => env('LINEAR_API_KEY'),
+        'team_id' => env('LINEAR_TEAM_ID'),
+    ],
+
 ];

@@ -1,0 +1,5 @@
+# Linear Writer Agent Prompt
+
+TODO: This prompt will be used when we integrate Neuron with an LLM to improve Linear description generation.
+
+The prompt should generate a clear, structured technical description for the Linear issue, based on the full processed incident state.

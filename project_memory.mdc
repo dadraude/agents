@@ -1,0 +1,143 @@
+# Memoria del Proyecto Final Capstone
+
+## Sistema Multiagente para la Gestión Inteligente de Incidencias de Customer Experience con Integración en Linear
+
+### Autor/a
+
+*Eduard Altimiras Duocastella*
+
+---
+
+## 1. Introducción
+
+Este proyecto nace de una **necesidad real dentro de la empresa** en la que trabajo. El departamento de Customer Experience (CX) gestiona diariamente un volumen elevado de incidencias de clientes que requieren análisis, clasificación, priorización y, en muchos casos, escalado al equipo de desarrollo utilizando la herramienta Linear.
+
+El objetivo de este trabajo es diseñar un sistema que no solo sirva como ejercicio académico, sino que pueda **aplicarse de forma progresiva en un entorno empresarial real**, aportando valor a medio y largo plazo. La solución propuesta se concibe como un primer paso hacia una futura herramienta interna capaz de mejorar la eficiencia del equipo de CX y la comunicación con el departamento de desarrollo.
+
+En este contexto, el proyecto propone el diseño e implementación de un **sistema multiagente** que automatiza y estructura el flujo de gestión de incidencias, desde la recepción del mensaje del cliente hasta la creación automática de un issue en Linear cuando sea necesario.
+
+---
+
+## 2. Objetivos
+
+### 2.1 Objetivo general
+
+Diseñar e implementar un sistema multiagente capaz de gestionar incidencias de clientes de forma automática, estructurada y explicable, incluyendo la creación de tickets en Linear cuando la incidencia requiere intervención del equipo de desarrollo.
+
+### 2.2 Objetivos específicos
+
+- Analizar texto en lenguaje natural procedente de clientes.
+- Descomponer el proceso de gestión de incidencias en agentes especializados.
+- Priorizar incidencias según impacto y urgencia.
+- Decidir de forma automática si una incidencia debe escalarse a desarrollo.
+- Generar issues en Linear con información técnica estructurada.
+
+---
+
+## 3. Alcance del Proyecto
+
+El proyecto se centra en la construcción de un **prototipo funcional**, no en un sistema listo para producción. El alcance incluye:
+
+- Implementación de un flujo multiagente orquestado.
+- Integración con la API de Linear.
+- Procesamiento de ejemplos representativos de incidencias de CX.
+
+Quedan fuera del alcance aspectos como autenticación de usuarios finales, interfaces gráficas complejas o despliegue en entornos productivos.
+
+---
+
+## 4. Descripción del Problema
+
+Las incidencias de clientes presentan habitualmente las siguientes dificultades:
+
+- Texto no estructurado y poco técnico.
+- Información incompleta (pasos para reproducir, impacto, contexto).
+- Urgencia y severidad mal definidas.
+- Necesidad de traducción a un lenguaje técnico comprensible para el equipo de desarrollo.
+
+Actualmente, este proceso depende en gran medida del criterio individual de los agentes de CX, lo que puede generar inconsistencias, pérdida de información y un alto coste temporal. El sistema propuesto busca reducir estos problemas mediante automatización y estandarización.
+
+---
+
+## 5. Arquitectura del Sistema
+
+El sistema se basa en una **arquitectura multiagente**, donde cada agente es responsable de una parte concreta del proceso. La coordinación se realiza mediante un orquestador central que mantiene un estado compartido.
+
+### 5.1 Agentes del sistema
+
+**Agent Interpreter**\
+Interpreta el texto del cliente y genera una estructura inicial con resumen, intención y entidades relevantes.
+
+**Agent Classifier**\
+Clasifica la incidencia por tipo, área afectada y relación con desarrollo.
+
+**Agent Validator**\
+Evalúa si la información disponible es suficiente o si es necesario solicitar más datos.
+
+**Agent Prioritizer**\
+Calcula la prioridad de la incidencia considerando impacto, urgencia y severidad.
+
+**Agent Decision Maker**\
+Decide si la incidencia se gestiona desde CX o si debe escalarse al equipo de desarrollo.
+
+**Agent Linear Writer**\
+Genera automáticamente un issue en Linear cuando la decisión es escalar.
+
+---
+
+## 6. Flujo de Funcionamiento
+
+1. Recepción de la incidencia del cliente.
+2. Interpretación y estructuración inicial.
+3. Clasificación y validación de la información.
+4. Cálculo de prioridad.
+5. Toma de decisión sobre la escalada.
+6. Creación automática de un ticket en Linear, si procede.
+
+Este flujo garantiza la trazabilidad del razonamiento seguido por el sistema.
+
+---
+
+## 7. Tecnologías Utilizadas
+
+- Lenguaje de programación: **Python**
+- Paradigma: **Sistemas multiagente**
+- Integración externa: **API de Linear**
+- Control de versiones: **GitHub**
+
+### Uso de modelos de lenguaje
+
+El sistema incorpora un **modelo de lenguaje de gran tamaño (LLM)** como componente cognitivo dentro de la arquitectura multiagente. Este modelo se utiliza exclusivamente en aquellos agentes cuya función requiere comprensión semántica avanzada o generación de texto en lenguaje natural.
+
+En concreto, el uso del LLM permite:
+
+- Interpretar mensajes de clientes expresados en lenguaje natural.
+- Generar resúmenes estructurados de incidencias.
+- Redactar descripciones técnicas claras y consistentes para la creación de tickets.
+
+El modelo de lenguaje no actúa como un agente autónomo ni toma decisiones finales. Su función es asistir a los agentes especializados, mientras que la coordinación del flujo y la toma de decisiones críticas permanecen bajo el control del orquestador del sistema. Este enfoque garantiza trazabilidad, control y explicabilidad en el comportamiento global del sistema.
+
+
+
+---
+
+## 8. Planificación
+
+El proyecto se desarrolla en un periodo de cuatro semanas:
+
+- **Semana 1:** diseño conceptual y definición de agentes.
+- **Semana 2:** implementación del orquestador y agentes base.
+- **Semana 3:** integración de modelos de IA y conexión con Linear.
+- **Semana 4:** pruebas, documentación y preparación de la entrega.
+
+---
+
+## 9. Resultados Esperados
+
+- Prototipo funcional del sistema multiagente.
+- Repositorio en GitHub con código documentado.
+- Ejemplos de incidencias procesadas de principio a fin.
+- Demostración del valor del enfoque multiagente en CX.
+
+---
+

@@ -1,0 +1,8 @@
+# Classifier Agent Prompt
+
+TODO: This prompt will be used when we integrate Neuron with an LLM to replace the current stub.
+
+The prompt should generate a JSON with:
+- type: incident type (bug, question, feature, other)
+- area: affected area (pos, kds, backoffice, loyalty, infra, other)
+- devRelated: boolean indicating if it requires developer intervention

@@ -1,0 +1,7 @@
+# Validator Agent Prompt
+
+TODO: This prompt will be used when we integrate Neuron with an LLM to replace the current stub.
+
+The prompt should validate whether the available information is sufficient and identify what is missing:
+- isSufficient: boolean
+- missingInfo: array of missing fields (steps_to_reproduce, environment_version, etc.)

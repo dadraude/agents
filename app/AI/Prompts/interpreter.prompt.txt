@@ -1,0 +1,8 @@
+# Interpreter Agent Prompt
+
+TODO: This prompt will be used when we integrate Neuron with an LLM to replace the current stub.
+
+The prompt should generate a JSON with:
+- summary: incident summary
+- intent: detected intent (report_issue, question, feature_request, unknown)
+- entities: list of detected entities (kds, pos, backoffice, etc.)
