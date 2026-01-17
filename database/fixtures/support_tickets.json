@@ -1,0 +1,195 @@
+[
+  {
+    "id": "TKT-001",
+    "title": "El POS falla en cobrar. Crash quan premo pagar",
+    "description": "El POS falla en cobrar. Crash quan premo pagar. iOS 14.8. Passos: obrir comanda, pagar, peta.",
+    "status": "nou",
+    "severity": "alta",
+    "priority": "urgent",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant El Celler",
+      "email": "gerent@elceller.cat",
+      "phone": "+34 932 123 456"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 14.8",
+      "app_version": "2.3.1"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T09:23:00Z",
+    "updated_at": "2026-01-15T09:23:00Z",
+    "sla_deadline": "2026-01-15T17:23:00Z"
+  },
+  {
+    "id": "TKT-002",
+    "title": "El KDS no mostra les comandes. Error intermitent",
+    "description": "El KDS no mostra les comandes. Error intermitent. A vegades funciona, a vegades no. No hem pogut identificar el patró.",
+    "status": "nou",
+    "severity": "mitjana",
+    "priority": "alta",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant La Terraza",
+      "email": "info@laterraza.es",
+      "phone": "+34 911 987 654"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 11",
+      "app_version": "1.8.5"
+    },
+    "channel": "telefon",
+    "assigned_to": null,
+    "created_at": "2026-01-15T10:15:00Z",
+    "updated_at": "2026-01-15T10:15:00Z",
+    "sla_deadline": "2026-01-16T10:15:00Z"
+  },
+  {
+    "id": "TKT-003",
+    "title": "No podem cobrar amb targeta. Error de connexió",
+    "description": "No podem cobrar amb targeta. Error de connexió amb el TPV. El problema va començar ahir al vespre i continua avui. Hem provat de reiniciar però no funciona.",
+    "status": "en_revisio",
+    "severity": "critica",
+    "priority": "urgent",
+    "product": "pos",
+    "customer": {
+      "name": "Bar Central",
+      "email": "barcentral@example.com",
+      "phone": "+34 933 555 777"
+    },
+    "environment": {
+      "device": "Terminal TPV",
+      "os": "Linux",
+      "app_version": "3.1.0"
+    },
+    "channel": "chat",
+    "assigned_to": "Support Team",
+    "created_at": "2026-01-14T18:30:00Z",
+    "updated_at": "2026-01-15T08:45:00Z",
+    "sla_deadline": "2026-01-15T12:30:00Z"
+  },
+  {
+    "id": "TKT-004",
+    "title": "Com configurar el sistema de fidelització?",
+    "description": "Hola, voldria saber com configurar el sistema de fidelització per als meus clients. Tinc dubtes sobre com afegir punts i com canviar-los per descomptes.",
+    "status": "nou",
+    "severity": "baixa",
+    "priority": "normal",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Modern",
+      "email": "info@cafemodern.cat",
+      "phone": "+34 934 222 333"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "Windows 11",
+      "app_version": "Web 2.0"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T11:00:00Z",
+    "updated_at": "2026-01-15T11:00:00Z",
+    "sla_deadline": "2026-01-17T11:00:00Z"
+  },
+  {
+    "id": "TKT-005",
+    "title": "Backoffice no carrega els informes. Error 500",
+    "description": "El backoffice no carrega els informes. Ens surt error 500 quan intentem generar el report de vendes del mes passat. Això passa des de fa 2 dies.",
+    "status": "nou",
+    "severity": "mitjana",
+    "priority": "alta",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Gourmet",
+      "email": "admin@gourmet.es",
+      "phone": "+34 912 444 555"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "macOS 14.2",
+      "app_version": "Web 3.2.1"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T12:30:00Z",
+    "updated_at": "2026-01-15T12:30:00Z",
+    "sla_deadline": "2026-01-16T12:30:00Z"
+  },
+  {
+    "id": "TKT-006",
+    "title": "M'agradaria tenir una funcionalitat per exportar comandes",
+    "description": "Hola, m'agradaria tenir una funcionalitat per exportar les comandes a Excel. Ara mateix només puc veure-les a la pantalla però no les puc descarregar.",
+    "status": "nou",
+    "severity": "baixa",
+    "priority": "baixa",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant El Jardí",
+      "email": "contacte@eljardi.cat",
+      "phone": "+34 935 666 888"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "Windows 10",
+      "app_version": "Web 3.2.1"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T13:45:00Z",
+    "updated_at": "2026-01-15T13:45:00Z",
+    "sla_deadline": "2026-01-22T13:45:00Z"
+  },
+  {
+    "id": "TKT-007",
+    "title": "Problema de connexió amb el load balancer",
+    "description": "Tenim problemes de connexió intermitents amb el load balancer. Els clients reporten que de vegades no poden accedir al sistema. Sembla un problema d'infraestructura.",
+    "status": "en_revisio",
+    "severity": "alta",
+    "priority": "urgent",
+    "product": "infra",
+    "customer": {
+      "name": "Multi-tenant Client",
+      "email": "devops@multitenant.com",
+      "phone": "+34 936 777 999"
+    },
+    "environment": {
+      "device": "Cloud Infrastructure",
+      "os": "Kubernetes",
+      "app_version": "N/A"
+    },
+    "channel": "telefon",
+    "assigned_to": "DevOps Team",
+    "created_at": "2026-01-15T07:00:00Z",
+    "updated_at": "2026-01-15T14:20:00Z",
+    "sla_deadline": "2026-01-15T19:00:00Z"
+  },
+  {
+    "id": "TKT-008",
+    "title": "El POS no imprimeix tiquets. Impressora no detectada",
+    "description": "El POS no imprimeix tiquets. L'impressora no és detectada pel sistema. Hem provat de reconectar-la però no funciona. És una impressora tèrmica Epson.",
+    "status": "processat",
+    "severity": "mitjana",
+    "priority": "normal",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant La Plaça",
+      "email": "info@laplaza.es",
+      "phone": "+34 937 111 222"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 15.2",
+      "app_version": "2.3.1"
+    },
+    "channel": "chat",
+    "assigned_to": "Support Team",
+    "created_at": "2026-01-14T16:00:00Z",
+    "updated_at": "2026-01-15T09:30:00Z",
+    "sla_deadline": "2026-01-16T16:00:00Z",
+    "resolved_at": "2026-01-15T09:30:00Z"
+  }
+]
