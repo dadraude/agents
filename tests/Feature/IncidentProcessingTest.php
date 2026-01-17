@@ -2,10 +2,14 @@
 
 use App\AI\Orchestrator\IncidentWorkflow;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 
 uses(RefreshDatabase::class);
 
-test('processes incident and returns status', function () {
+test('processes incident and returns status with heuristic agents', function () {
+    // Ensure LLM is disabled for this test
+    Config::set('neuron-ai.use_llm', false);
+
     $workflow = app(IncidentWorkflow::class);
     $result = $workflow->run('El POS falla en cobrar. Crash quan premo pagar. iOS 14.8. Passos: obrir comanda, pagar, peta.');
 
@@ -16,6 +20,9 @@ test('processes incident and returns status', function () {
 });
 
 test('api endpoint processes incident correctly', function () {
+    // Ensure LLM is disabled for this test
+    Config::set('neuron-ai.use_llm', false);
+
     $response = $this->postJson('/api/incidents/process', [
         'text' => 'El KDS no mostra les comandes. Error intermitent.',
     ]);

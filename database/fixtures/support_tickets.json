@@ -1,10 +1,10 @@
 [
   {
     "id": "TKT-001",
-    "title": "El POS falla en cobrar. Crash quan premo pagar",
-    "description": "El POS falla en cobrar. Crash quan premo pagar. iOS 14.8. Passos: obrir comanda, pagar, peta.",
-    "status": "nou",
-    "severity": "alta",
+    "title": "POS fails when charging. Crash when I press pay",
+    "description": "POS fails when charging. Crash when I press pay. iOS 14.8. Steps: open order, pay, crashes.",
+    "status": "new",
+    "severity": "high",
     "priority": "urgent",
     "product": "pos",
     "customer": {
@@ -25,11 +25,11 @@
   },
   {
     "id": "TKT-002",
-    "title": "El KDS no mostra les comandes. Error intermitent",
-    "description": "El KDS no mostra les comandes. Error intermitent. A vegades funciona, a vegades no. No hem pogut identificar el patró.",
-    "status": "nou",
-    "severity": "mitjana",
-    "priority": "alta",
+    "title": "KDS doesn't show orders. Intermittent error",
+    "description": "KDS doesn't show orders. Intermittent error. Sometimes it works, sometimes it doesn't. We haven't been able to identify the pattern.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "high",
     "product": "kds",
     "customer": {
       "name": "Restaurant La Terraza",
@@ -41,7 +41,7 @@
       "os": "Android 11",
       "app_version": "1.8.5"
     },
-    "channel": "telefon",
+    "channel": "phone",
     "assigned_to": null,
     "created_at": "2026-01-15T10:15:00Z",
     "updated_at": "2026-01-15T10:15:00Z",
@@ -49,10 +49,10 @@
   },
   {
     "id": "TKT-003",
-    "title": "No podem cobrar amb targeta. Error de connexió",
-    "description": "No podem cobrar amb targeta. Error de connexió amb el TPV. El problema va començar ahir al vespre i continua avui. Hem provat de reiniciar però no funciona.",
-    "status": "en_revisio",
-    "severity": "critica",
+    "title": "We can't charge with card. Connection error",
+    "description": "We can't charge with card. Connection error with the POS terminal. The problem started yesterday evening and continues today. We've tried restarting but it doesn't work.",
+    "status": "in_review",
+    "severity": "critical",
     "priority": "urgent",
     "product": "pos",
     "customer": {
@@ -73,10 +73,10 @@
   },
   {
     "id": "TKT-004",
-    "title": "Com configurar el sistema de fidelització?",
-    "description": "Hola, voldria saber com configurar el sistema de fidelització per als meus clients. Tinc dubtes sobre com afegir punts i com canviar-los per descomptes.",
-    "status": "nou",
-    "severity": "baixa",
+    "title": "How to configure the loyalty system?",
+    "description": "Hello, I would like to know how to configure the loyalty system for my clients. I have questions about how to add points and how to exchange them for discounts.",
+    "status": "new",
+    "severity": "low",
     "priority": "normal",
     "product": "loyalty",
     "customer": {
@@ -97,11 +97,11 @@
   },
   {
     "id": "TKT-005",
-    "title": "Backoffice no carrega els informes. Error 500",
-    "description": "El backoffice no carrega els informes. Ens surt error 500 quan intentem generar el report de vendes del mes passat. Això passa des de fa 2 dies.",
-    "status": "nou",
-    "severity": "mitjana",
-    "priority": "alta",
+    "title": "Backoffice doesn't load reports. Error 500",
+    "description": "Backoffice doesn't load reports. We get error 500 when trying to generate the sales report from last month. This has been happening for 2 days.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "high",
     "product": "backoffice",
     "customer": {
       "name": "Restaurant Gourmet",
@@ -121,11 +121,11 @@
   },
   {
     "id": "TKT-006",
-    "title": "M'agradaria tenir una funcionalitat per exportar comandes",
-    "description": "Hola, m'agradaria tenir una funcionalitat per exportar les comandes a Excel. Ara mateix només puc veure-les a la pantalla però no les puc descarregar.",
-    "status": "nou",
-    "severity": "baixa",
-    "priority": "baixa",
+    "title": "I would like to have a feature to export orders",
+    "description": "Hello, I would like to have a feature to export orders to Excel. Right now I can only see them on screen but I can't download them.",
+    "status": "new",
+    "severity": "low",
+    "priority": "low",
     "product": "backoffice",
     "customer": {
       "name": "Restaurant El Jardí",
@@ -145,10 +145,10 @@
   },
   {
     "id": "TKT-007",
-    "title": "Problema de connexió amb el load balancer",
-    "description": "Tenim problemes de connexió intermitents amb el load balancer. Els clients reporten que de vegades no poden accedir al sistema. Sembla un problema d'infraestructura.",
-    "status": "en_revisio",
-    "severity": "alta",
+    "title": "Connection problem with load balancer",
+    "description": "We have intermittent connection problems with the load balancer. Clients report that sometimes they can't access the system. It seems like an infrastructure problem.",
+    "status": "in_review",
+    "severity": "high",
     "priority": "urgent",
     "product": "infra",
     "customer": {
@@ -161,7 +161,7 @@
       "os": "Kubernetes",
       "app_version": "N/A"
     },
-    "channel": "telefon",
+    "channel": "phone",
     "assigned_to": "DevOps Team",
     "created_at": "2026-01-15T07:00:00Z",
     "updated_at": "2026-01-15T14:20:00Z",
@@ -169,10 +169,10 @@
   },
   {
     "id": "TKT-008",
-    "title": "El POS no imprimeix tiquets. Impressora no detectada",
-    "description": "El POS no imprimeix tiquets. L'impressora no és detectada pel sistema. Hem provat de reconectar-la però no funciona. És una impressora tèrmica Epson.",
-    "status": "processat",
-    "severity": "mitjana",
+    "title": "POS doesn't print tickets. Printer not detected",
+    "description": "POS doesn't print tickets. The printer is not detected by the system. We've tried reconnecting it but it doesn't work. It's an Epson thermal printer.",
+    "status": "processed",
+    "severity": "medium",
     "priority": "normal",
     "product": "pos",
     "customer": {
@@ -191,5 +191,1013 @@
     "updated_at": "2026-01-15T09:30:00Z",
     "sla_deadline": "2026-01-16T16:00:00Z",
     "resolved_at": "2026-01-15T09:30:00Z"
+  },
+  {
+    "id": "TKT-009",
+    "title": "KDS screen freezes during rush hour",
+    "description": "The KDS screen freezes during rush hour. It happens every day around 8 PM. We have to restart the device multiple times.",
+    "status": "new",
+    "severity": "high",
+    "priority": "high",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Marítim",
+      "email": "info@maritim.cat",
+      "phone": "+34 938 222 333"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 12",
+      "app_version": "1.9.0"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T14:00:00Z",
+    "updated_at": "2026-01-15T14:00:00Z",
+    "sla_deadline": "2026-01-16T14:00:00Z"
+  },
+  {
+    "id": "TKT-010",
+    "title": "Can't sync loyalty points between devices",
+    "description": "Loyalty points don't sync between the POS and the mobile app. Customers complain that points disappear when they check on their phone.",
+    "status": "in_review",
+    "severity": "medium",
+    "priority": "high",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè del Mar",
+      "email": "contacte@cafedelmar.es",
+      "phone": "+34 939 333 444"
+    },
+    "environment": {
+      "device": "Multiple",
+      "os": "iOS/Android",
+      "app_version": "2.4.0"
+    },
+    "channel": "chat",
+    "assigned_to": "Support Team",
+    "created_at": "2026-01-15T08:30:00Z",
+    "updated_at": "2026-01-15T13:15:00Z",
+    "sla_deadline": "2026-01-17T08:30:00Z"
+  },
+  {
+    "id": "TKT-011",
+    "title": "Backoffice export to PDF fails",
+    "description": "When trying to export reports to PDF, the system shows an error. CSV export works fine, but PDF doesn't.",
+    "status": "new",
+    "severity": "low",
+    "priority": "normal",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Can Roca",
+      "email": "admin@canroca.cat",
+      "phone": "+34 931 444 555"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "Windows 11",
+      "app_version": "Web 3.2.1"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T15:20:00Z",
+    "updated_at": "2026-01-15T15:20:00Z",
+    "sla_deadline": "2026-01-18T15:20:00Z"
+  },
+  {
+    "id": "TKT-012",
+    "title": "POS receipt printer prints blank pages",
+    "description": "The receipt printer prints blank pages randomly. It happens about 1 in 10 receipts. We've checked the paper and ink.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "normal",
+    "product": "pos",
+    "customer": {
+      "name": "Bar El Refugi",
+      "email": "info@elrefugi.cat",
+      "phone": "+34 932 555 666"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 16.1",
+      "app_version": "2.4.0"
+    },
+    "channel": "phone",
+    "assigned_to": null,
+    "created_at": "2026-01-15T16:10:00Z",
+    "updated_at": "2026-01-15T16:10:00Z",
+    "sla_deadline": "2026-01-17T16:10:00Z"
+  },
+  {
+    "id": "TKT-013",
+    "title": "KDS doesn't show allergen information",
+    "description": "The KDS screen doesn't display allergen information for dishes. This is a compliance issue and we need it fixed urgently.",
+    "status": "new",
+    "severity": "high",
+    "priority": "urgent",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Vegà",
+      "email": "info@vega.cat",
+      "phone": "+34 933 666 777"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 13",
+      "app_version": "1.9.2"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T11:45:00Z",
+    "updated_at": "2026-01-15T11:45:00Z",
+    "sla_deadline": "2026-01-15T19:45:00Z"
+  },
+  {
+    "id": "TKT-014",
+    "title": "Loyalty program discount not applying",
+    "description": "When customers try to redeem loyalty points for a discount, the discount is not applied at checkout. Points are deducted but discount doesn't show.",
+    "status": "in_review",
+    "severity": "high",
+    "priority": "high",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Central",
+      "email": "gerent@cafecentral.es",
+      "phone": "+34 934 777 888"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 15.5",
+      "app_version": "2.3.5"
+    },
+    "channel": "chat",
+    "assigned_to": "Support Team",
+    "created_at": "2026-01-14T20:00:00Z",
+    "updated_at": "2026-01-15T10:30:00Z",
+    "sla_deadline": "2026-01-16T20:00:00Z"
+  },
+  {
+    "id": "TKT-015",
+    "title": "Backoffice user permissions not working",
+    "description": "We created a new user with limited permissions but they can still access all sections. The permission system seems broken.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "high",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Grup",
+      "email": "it@gruprestaurant.com",
+      "phone": "+35 935 888 999"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "macOS 15.0",
+      "app_version": "Web 3.3.0"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T09:15:00Z",
+    "updated_at": "2026-01-15T09:15:00Z",
+    "sla_deadline": "2026-01-17T09:15:00Z"
+  },
+  {
+    "id": "TKT-016",
+    "title": "POS card reader timeout error",
+    "description": "Card reader times out after 30 seconds. Customers have to try multiple times. This slows down service significantly.",
+    "status": "new",
+    "severity": "high",
+    "priority": "urgent",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant Ràpid",
+      "email": "info@rapid.cat",
+      "phone": "+34 936 999 000"
+    },
+    "environment": {
+      "device": "Terminal TPV",
+      "os": "Linux",
+      "app_version": "3.2.0"
+    },
+    "channel": "phone",
+    "assigned_to": null,
+    "created_at": "2026-01-15T17:30:00Z",
+    "updated_at": "2026-01-15T17:30:00Z",
+    "sla_deadline": "2026-01-16T09:30:00Z"
+  },
+  {
+    "id": "TKT-017",
+    "title": "KDS order numbers are duplicated",
+    "description": "Sometimes the KDS shows the same order number twice. This confuses the kitchen staff. It happens randomly.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "normal",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant La Cuina",
+      "email": "info@lacuina.es",
+      "phone": "+34 937 000 111"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 11",
+      "app_version": "1.8.8"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T18:00:00Z",
+    "updated_at": "2026-01-15T18:00:00Z",
+    "sla_deadline": "2026-01-18T18:00:00Z"
+  },
+  {
+    "id": "TKT-018",
+    "title": "Loyalty points expire notification not sent",
+    "description": "Customers are not receiving notifications when their loyalty points are about to expire. We've lost several customers because of this.",
+    "status": "new",
+    "severity": "low",
+    "priority": "normal",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Nostre",
+      "email": "contacte@cafenostre.cat",
+      "phone": "+34 938 111 222"
+    },
+    "environment": {
+      "device": "Server",
+      "os": "Linux",
+      "app_version": "Backend 2.1.0"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T19:15:00Z",
+    "updated_at": "2026-01-15T19:15:00Z",
+    "sla_deadline": "2026-01-20T19:15:00Z"
+  },
+  {
+    "id": "TKT-019",
+    "title": "Backoffice inventory sync delay",
+    "description": "Inventory updates take up to 2 hours to sync from POS to backoffice. This causes stock discrepancies.",
+    "status": "in_review",
+    "severity": "medium",
+    "priority": "high",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Cadena",
+      "email": "admin@cadena.es",
+      "phone": "+34 939 222 333"
+    },
+    "environment": {
+      "device": "Cloud",
+      "os": "Linux",
+      "app_version": "Web 3.2.1"
+    },
+    "channel": "chat",
+    "assigned_to": "DevOps Team",
+    "created_at": "2026-01-14T14:00:00Z",
+    "updated_at": "2026-01-15T12:00:00Z",
+    "sla_deadline": "2026-01-17T14:00:00Z"
+  },
+  {
+    "id": "TKT-020",
+    "title": "POS app crashes on iPad when switching users",
+    "description": "The POS app crashes when switching between user accounts on iPad. We have to restart the app every time.",
+    "status": "new",
+    "severity": "high",
+    "priority": "high",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant Multi",
+      "email": "info@multi.cat",
+      "phone": "+34 931 333 444"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 17.0",
+      "app_version": "2.5.0"
+    },
+    "channel": "phone",
+    "assigned_to": null,
+    "created_at": "2026-01-15T20:00:00Z",
+    "updated_at": "2026-01-15T20:00:00Z",
+    "sla_deadline": "2026-01-17T20:00:00Z"
+  },
+  {
+    "id": "TKT-021",
+    "title": "KDS doesn't update when order is modified",
+    "description": "When we modify an order from the POS, the KDS doesn't update. Kitchen staff prepare the wrong items.",
+    "status": "new",
+    "severity": "high",
+    "priority": "urgent",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Modificat",
+      "email": "info@modificat.es",
+      "phone": "+34 932 444 555"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 12",
+      "app_version": "1.9.1"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-15T21:30:00Z",
+    "updated_at": "2026-01-15T21:30:00Z",
+    "sla_deadline": "2026-01-16T09:30:00Z"
+  },
+  {
+    "id": "TKT-022",
+    "title": "Loyalty program signup form has validation errors",
+    "description": "The loyalty program signup form rejects valid email addresses. Some customers can't register.",
+    "status": "new",
+    "severity": "low",
+    "priority": "normal",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Validació",
+      "email": "info@validacio.cat",
+      "phone": "+34 933 555 666"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "Windows 10",
+      "app_version": "Web 2.1.0"
+    },
+    "channel": "chat",
+    "assigned_to": null,
+    "created_at": "2026-01-15T22:00:00Z",
+    "updated_at": "2026-01-15T22:00:00Z",
+    "sla_deadline": "2026-01-19T22:00:00Z"
+  },
+  {
+    "id": "TKT-023",
+    "title": "Backoffice dashboard loads very slowly",
+    "description": "The backoffice dashboard takes over 30 seconds to load. It's almost unusable. Other pages load fine.",
+    "status": "in_review",
+    "severity": "medium",
+    "priority": "high",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Llarg",
+      "email": "admin@llarg.es",
+      "phone": "+34 934 666 777"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "macOS 14.5",
+      "app_version": "Web 3.2.1"
+    },
+    "channel": "email",
+    "assigned_to": "DevOps Team",
+    "created_at": "2026-01-13T10:00:00Z",
+    "updated_at": "2026-01-15T11:00:00Z",
+    "sla_deadline": "2026-01-16T10:00:00Z"
+  },
+  {
+    "id": "TKT-024",
+    "title": "POS offline mode not working",
+    "description": "When internet connection is lost, POS should work in offline mode but it doesn't. We can't process any orders.",
+    "status": "new",
+    "severity": "critical",
+    "priority": "urgent",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant Offline",
+      "email": "info@offline.cat",
+      "phone": "+34 935 777 888"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 16.5",
+      "app_version": "2.4.2"
+    },
+    "channel": "phone",
+    "assigned_to": null,
+    "created_at": "2026-01-15T23:00:00Z",
+    "updated_at": "2026-01-15T23:00:00Z",
+    "sla_deadline": "2026-01-16T07:00:00Z"
+  },
+  {
+    "id": "TKT-025",
+    "title": "KDS sound notifications not configurable",
+    "description": "The KDS sound notifications are too loud and we can't adjust the volume. It's disturbing customers.",
+    "status": "new",
+    "severity": "low",
+    "priority": "low",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Silenciós",
+      "email": "info@silencios.es",
+      "phone": "+34 936 888 999"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 13",
+      "app_version": "1.9.2"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-16T08:00:00Z",
+    "updated_at": "2026-01-16T08:00:00Z",
+    "sla_deadline": "2026-01-23T08:00:00Z"
+  },
+  {
+    "id": "TKT-026",
+    "title": "Loyalty program birthday rewards not sent",
+    "description": "Customers should receive birthday rewards but they're not being sent. We've checked the configuration and it's correct.",
+    "status": "new",
+    "severity": "low",
+    "priority": "normal",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Aniversari",
+      "email": "contacte@aniversari.cat",
+      "phone": "+34 937 999 000"
+    },
+    "environment": {
+      "device": "Server",
+      "os": "Linux",
+      "app_version": "Backend 2.1.0"
+    },
+    "channel": "chat",
+    "assigned_to": null,
+    "created_at": "2026-01-16T09:15:00Z",
+    "updated_at": "2026-01-16T09:15:00Z",
+    "sla_deadline": "2026-01-21T09:15:00Z"
+  },
+  {
+    "id": "TKT-027",
+    "title": "Backoffice can't delete old orders",
+    "description": "We need to delete orders older than 2 years for GDPR compliance but the delete function doesn't work.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "high",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant GDPR",
+      "email": "legal@gdpr.es",
+      "phone": "+34 938 000 111"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "Windows 11",
+      "app_version": "Web 3.3.0"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-16T10:30:00Z",
+    "updated_at": "2026-01-16T10:30:00Z",
+    "sla_deadline": "2026-01-18T10:30:00Z"
+  },
+  {
+    "id": "TKT-028",
+    "title": "POS refund process is confusing",
+    "description": "The refund process in POS is confusing. Staff members often make mistakes. We need better UI/UX.",
+    "status": "new",
+    "severity": "low",
+    "priority": "low",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant Confús",
+      "email": "info@confus.cat",
+      "phone": "+34 939 111 222"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 15.8",
+      "app_version": "2.3.8"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-16T11:45:00Z",
+    "updated_at": "2026-01-16T11:45:00Z",
+    "sla_deadline": "2026-01-24T11:45:00Z"
+  },
+  {
+    "id": "TKT-029",
+    "title": "KDS doesn't show preparation time estimates",
+    "description": "The KDS should show estimated preparation time for each dish but it's not displaying. This information is configured.",
+    "status": "new",
+    "severity": "low",
+    "priority": "normal",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Temps",
+      "email": "info@temps.es",
+      "phone": "+34 931 222 333"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 11",
+      "app_version": "1.8.9"
+    },
+    "channel": "chat",
+    "assigned_to": null,
+    "created_at": "2026-01-16T12:00:00Z",
+    "updated_at": "2026-01-16T12:00:00Z",
+    "sla_deadline": "2026-01-19T12:00:00Z"
+  },
+  {
+    "id": "TKT-030",
+    "title": "Loyalty program tier upgrade not automatic",
+    "description": "Customers should automatically upgrade to higher tiers when they reach the required points, but it's not happening.",
+    "status": "in_review",
+    "severity": "medium",
+    "priority": "normal",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Nivell",
+      "email": "contacte@nivell.cat",
+      "phone": "+34 932 333 444"
+    },
+    "environment": {
+      "device": "Server",
+      "os": "Linux",
+      "app_version": "Backend 2.1.1"
+    },
+    "channel": "email",
+    "assigned_to": "Support Team",
+    "created_at": "2026-01-15T13:00:00Z",
+    "updated_at": "2026-01-16T08:00:00Z",
+    "sla_deadline": "2026-01-18T13:00:00Z"
+  },
+  {
+    "id": "TKT-031",
+    "title": "Backoffice reports missing data for last week",
+    "description": "The sales report for last week is missing data from Tuesday and Wednesday. Other days are fine.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "high",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Dades",
+      "email": "admin@dades.es",
+      "phone": "+34 933 444 555"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "macOS 15.1",
+      "app_version": "Web 3.3.0"
+    },
+    "channel": "phone",
+    "assigned_to": null,
+    "created_at": "2026-01-16T13:20:00Z",
+    "updated_at": "2026-01-16T13:20:00Z",
+    "sla_deadline": "2026-01-17T13:20:00Z"
+  },
+  {
+    "id": "TKT-032",
+    "title": "POS split payment feature not working",
+    "description": "When trying to split payment between card and cash, the POS crashes. Single payment methods work fine.",
+    "status": "new",
+    "severity": "high",
+    "priority": "high",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant Dividit",
+      "email": "info@dividit.cat",
+      "phone": "+34 934 555 666"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 17.2",
+      "app_version": "2.5.1"
+    },
+    "channel": "chat",
+    "assigned_to": null,
+    "created_at": "2026-01-16T14:30:00Z",
+    "updated_at": "2026-01-16T14:30:00Z",
+    "sla_deadline": "2026-01-18T14:30:00Z"
+  },
+  {
+    "id": "TKT-033",
+    "title": "KDS order priority not respected",
+    "description": "Orders marked as high priority don't appear first on the KDS. The priority system seems broken.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "normal",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Prioritat",
+      "email": "info@prioritat.es",
+      "phone": "+34 935 666 777"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 12",
+      "app_version": "1.9.1"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-16T15:45:00Z",
+    "updated_at": "2026-01-16T15:45:00Z",
+    "sla_deadline": "2026-01-19T15:45:00Z"
+  },
+  {
+    "id": "TKT-034",
+    "title": "Loyalty program referral bonus not credited",
+    "description": "When customers refer friends, the referral bonus is not being credited to their account. The referral was tracked but bonus missing.",
+    "status": "new",
+    "severity": "low",
+    "priority": "normal",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Referit",
+      "email": "contacte@referit.cat",
+      "phone": "+34 936 777 888"
+    },
+    "environment": {
+      "device": "Mobile App",
+      "os": "iOS/Android",
+      "app_version": "2.4.1"
+    },
+    "channel": "chat",
+    "assigned_to": null,
+    "created_at": "2026-01-16T16:00:00Z",
+    "updated_at": "2026-01-16T16:00:00Z",
+    "sla_deadline": "2026-01-21T16:00:00Z"
+  },
+  {
+    "id": "TKT-035",
+    "title": "Backoffice user session expires too quickly",
+    "description": "User sessions expire after 15 minutes of inactivity. This is too short for our staff who need to work on reports.",
+    "status": "new",
+    "severity": "low",
+    "priority": "low",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Sessió",
+      "email": "admin@sessio.es",
+      "phone": "+34 937 888 999"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "Windows 10",
+      "app_version": "Web 3.2.1"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-16T17:15:00Z",
+    "updated_at": "2026-01-16T17:15:00Z",
+    "sla_deadline": "2026-01-25T17:15:00Z"
+  },
+  {
+    "id": "TKT-036",
+    "title": "POS can't process gift card payments",
+    "description": "When customers try to pay with gift cards, the POS shows an error. Gift cards are valid but system doesn't accept them.",
+    "status": "new",
+    "severity": "high",
+    "priority": "high",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant Regal",
+      "email": "info@regal.cat",
+      "phone": "+34 938 999 000"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 16.8",
+      "app_version": "2.4.3"
+    },
+    "channel": "phone",
+    "assigned_to": null,
+    "created_at": "2026-01-16T18:30:00Z",
+    "updated_at": "2026-01-16T18:30:00Z",
+    "sla_deadline": "2026-01-18T18:30:00Z"
+  },
+  {
+    "id": "TKT-037",
+    "title": "KDS doesn't show custom notes from POS",
+    "description": "When we add custom notes to an order in POS, they don't appear on the KDS. Kitchen staff miss important instructions.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "high",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Notes",
+      "email": "info@notes.es",
+      "phone": "+34 939 000 111"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 13",
+      "app_version": "1.9.3"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-16T19:00:00Z",
+    "updated_at": "2026-01-16T19:00:00Z",
+    "sla_deadline": "2026-01-18T19:00:00Z"
+  },
+  {
+    "id": "TKT-038",
+    "title": "Loyalty program points calculation is wrong",
+    "description": "The loyalty points calculation seems incorrect. Customers are getting fewer points than they should based on purchase amount.",
+    "status": "in_review",
+    "severity": "high",
+    "priority": "high",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Càlcul",
+      "email": "contacte@calcul.cat",
+      "phone": "+34 931 111 222"
+    },
+    "environment": {
+      "device": "Server",
+      "os": "Linux",
+      "app_version": "Backend 2.1.2"
+    },
+    "channel": "chat",
+    "assigned_to": "Support Team",
+    "created_at": "2026-01-14T16:30:00Z",
+    "updated_at": "2026-01-16T10:00:00Z",
+    "sla_deadline": "2026-01-17T16:30:00Z"
+  },
+  {
+    "id": "TKT-039",
+    "title": "Backoffice can't import products from CSV",
+    "description": "When trying to import products from CSV file, the system shows an error. The CSV format matches the documentation.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "normal",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Import",
+      "email": "admin@import.es",
+      "phone": "+34 932 222 333"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "macOS 14.8",
+      "app_version": "Web 3.3.0"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-16T20:15:00Z",
+    "updated_at": "2026-01-16T20:15:00Z",
+    "sla_deadline": "2026-01-20T20:15:00Z"
+  },
+  {
+    "id": "TKT-040",
+    "title": "POS receipt email not sent to customer",
+    "description": "Customers request email receipts but they're not being sent. Email addresses are correct and verified.",
+    "status": "new",
+    "severity": "low",
+    "priority": "normal",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant Email",
+      "email": "info@email.cat",
+      "phone": "+34 933 333 444"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 17.1",
+      "app_version": "2.5.2"
+    },
+    "channel": "chat",
+    "assigned_to": null,
+    "created_at": "2026-01-16T21:30:00Z",
+    "updated_at": "2026-01-16T21:30:00Z",
+    "sla_deadline": "2026-01-20T21:30:00Z"
+  },
+  {
+    "id": "TKT-041",
+    "title": "KDS screen brightness too low",
+    "description": "The KDS screen brightness is too low and we can't adjust it. It's hard to read in bright kitchen lighting.",
+    "status": "new",
+    "severity": "low",
+    "priority": "low",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Brillant",
+      "email": "info@brillant.es",
+      "phone": "+34 934 444 555"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 11",
+      "app_version": "1.8.7"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-16T22:00:00Z",
+    "updated_at": "2026-01-16T22:00:00Z",
+    "sla_deadline": "2026-01-24T22:00:00Z"
+  },
+  {
+    "id": "TKT-042",
+    "title": "Loyalty program QR code scanner not working",
+    "description": "The QR code scanner in the loyalty app doesn't work. Customers can't scan QR codes to earn points.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "normal",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè QR",
+      "email": "contacte@qr.cat",
+      "phone": "+34 935 555 666"
+    },
+    "environment": {
+      "device": "Mobile App",
+      "os": "iOS/Android",
+      "app_version": "2.4.2"
+    },
+    "channel": "phone",
+    "assigned_to": null,
+    "created_at": "2026-01-17T08:00:00Z",
+    "updated_at": "2026-01-17T08:00:00Z",
+    "sla_deadline": "2026-01-20T08:00:00Z"
+  },
+  {
+    "id": "TKT-043",
+    "title": "Backoffice analytics charts not loading",
+    "description": "The analytics charts in backoffice don't load. They show a loading spinner forever. Data tables work fine.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "normal",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Gràfics",
+      "email": "admin@grafics.es",
+      "phone": "+34 936 666 777"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "Windows 11",
+      "app_version": "Web 3.3.1"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-17T09:15:00Z",
+    "updated_at": "2026-01-17T09:15:00Z",
+    "sla_deadline": "2026-01-20T09:15:00Z"
+  },
+  {
+    "id": "TKT-044",
+    "title": "POS tip calculation is incorrect",
+    "description": "When calculating tips, the POS shows wrong amounts. It's not using the correct percentage.",
+    "status": "new",
+    "severity": "high",
+    "priority": "high",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant Propina",
+      "email": "info@propina.cat",
+      "phone": "+34 937 777 888"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 15.9",
+      "app_version": "2.3.9"
+    },
+    "channel": "chat",
+    "assigned_to": null,
+    "created_at": "2026-01-17T10:30:00Z",
+    "updated_at": "2026-01-17T10:30:00Z",
+    "sla_deadline": "2026-01-19T10:30:00Z"
+  },
+  {
+    "id": "TKT-045",
+    "title": "KDS order completion doesn't sync with POS",
+    "description": "When kitchen marks an order as complete in KDS, it doesn't update in POS. Staff don't know when orders are ready.",
+    "status": "new",
+    "severity": "high",
+    "priority": "urgent",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Sincro",
+      "email": "info@sincro.es",
+      "phone": "+34 938 888 999"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 12",
+      "app_version": "1.9.2"
+    },
+    "channel": "phone",
+    "assigned_to": null,
+    "created_at": "2026-01-17T11:45:00Z",
+    "updated_at": "2026-01-17T11:45:00Z",
+    "sla_deadline": "2026-01-17T19:45:00Z"
+  },
+  {
+    "id": "TKT-046",
+    "title": "Loyalty program push notifications not received",
+    "description": "Customers don't receive push notifications about loyalty rewards and promotions. Notifications are enabled in settings.",
+    "status": "new",
+    "severity": "low",
+    "priority": "normal",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Notificació",
+      "email": "contacte@notificacio.cat",
+      "phone": "+34 939 999 000"
+    },
+    "environment": {
+      "device": "Mobile App",
+      "os": "iOS/Android",
+      "app_version": "2.4.3"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-17T12:00:00Z",
+    "updated_at": "2026-01-17T12:00:00Z",
+    "sla_deadline": "2026-01-22T12:00:00Z"
+  },
+  {
+    "id": "TKT-047",
+    "title": "Backoffice can't filter orders by date range",
+    "description": "The date range filter in orders doesn't work. It shows all orders regardless of selected dates.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "normal",
+    "product": "backoffice",
+    "customer": {
+      "name": "Restaurant Filtre",
+      "email": "admin@filtre.es",
+      "phone": "+34 931 000 111"
+    },
+    "environment": {
+      "device": "PC",
+      "os": "macOS 15.2",
+      "app_version": "Web 3.3.1"
+    },
+    "channel": "chat",
+    "assigned_to": null,
+    "created_at": "2026-01-17T13:20:00Z",
+    "updated_at": "2026-01-17T13:20:00Z",
+    "sla_deadline": "2026-01-21T13:20:00Z"
+  },
+  {
+    "id": "TKT-048",
+    "title": "POS can't handle multiple discounts",
+    "description": "When applying multiple discounts (loyalty + promotion), the POS shows an error. Single discounts work fine.",
+    "status": "new",
+    "severity": "medium",
+    "priority": "normal",
+    "product": "pos",
+    "customer": {
+      "name": "Restaurant Descompte",
+      "email": "info@descompte.cat",
+      "phone": "+34 932 111 222"
+    },
+    "environment": {
+      "device": "iPad",
+      "os": "iOS 16.9",
+      "app_version": "2.4.4"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-17T14:30:00Z",
+    "updated_at": "2026-01-17T14:30:00Z",
+    "sla_deadline": "2026-01-20T14:30:00Z"
+  },
+  {
+    "id": "TKT-049",
+    "title": "KDS doesn't show dietary restrictions",
+    "description": "Dietary restrictions (gluten-free, vegan, etc.) configured in POS don't appear on KDS. This is a safety issue.",
+    "status": "new",
+    "severity": "critical",
+    "priority": "urgent",
+    "product": "kds",
+    "customer": {
+      "name": "Restaurant Dietètic",
+      "email": "info@dietetic.es",
+      "phone": "+34 933 222 333"
+    },
+    "environment": {
+      "device": "Tablet Android",
+      "os": "Android 13",
+      "app_version": "1.9.4"
+    },
+    "channel": "phone",
+    "assigned_to": null,
+    "created_at": "2026-01-17T15:45:00Z",
+    "updated_at": "2026-01-17T15:45:00Z",
+    "sla_deadline": "2026-01-17T23:45:00Z"
+  },
+  {
+    "id": "TKT-050",
+    "title": "Loyalty program points expire too quickly",
+    "description": "Loyalty points expire after 30 days. This is too short. Customers lose points before they can use them.",
+    "status": "new",
+    "severity": "low",
+    "priority": "low",
+    "product": "loyalty",
+    "customer": {
+      "name": "Cafè Expiració",
+      "email": "contacte@expiracion.cat",
+      "phone": "+34 934 333 444"
+    },
+    "environment": {
+      "device": "Server",
+      "os": "Linux",
+      "app_version": "Backend 2.1.3"
+    },
+    "channel": "email",
+    "assigned_to": null,
+    "created_at": "2026-01-17T16:00:00Z",
+    "updated_at": "2026-01-17T16:00:00Z",
+    "sla_deadline": "2026-01-25T16:00:00Z"
   }
 ]

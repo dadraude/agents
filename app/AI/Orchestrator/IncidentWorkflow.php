@@ -8,6 +8,13 @@ use App\AI\Agents\InterpreterAgent;
 use App\AI\Agents\LinearWriterAgent;
 use App\AI\Agents\PrioritizerAgent;
 use App\AI\Agents\ValidatorAgent;
+use App\AI\Config\NeuronConfig;
+use App\AI\Neuron\ClassifierNeuronAgent;
+use App\AI\Neuron\DecisionMakerNeuronAgent;
+use App\AI\Neuron\InterpreterNeuronAgent;
+use App\AI\Neuron\LinearWriterNeuronAgent;
+use App\AI\Neuron\PrioritizerNeuronAgent;
+use App\AI\Neuron\ValidatorNeuronAgent;
 use App\Models\IncidentRun;
 
 class IncidentWorkflow
@@ -17,13 +24,13 @@ class IncidentWorkflow
         $state = new IncidentState($text);
 
         // 1) Interpreter
-        $state = app(InterpreterAgent::class)->handle($state);
+        $state = $this->getAgent(InterpreterAgent::class, InterpreterNeuronAgent::class)->handle($state);
 
         // 2) Classifier
-        $state = app(ClassifierAgent::class)->handle($state);
+        $state = $this->getAgent(ClassifierAgent::class, ClassifierNeuronAgent::class)->handle($state);
 
         // 3) Validator
-        $state = app(ValidatorAgent::class)->handle($state);
+        $state = $this->getAgent(ValidatorAgent::class, ValidatorNeuronAgent::class)->handle($state);
 
         if (! $state->isSufficient) {
             $status = 'needs_more_info';
@@ -36,14 +43,14 @@ class IncidentWorkflow
         }
 
         // 4) Prioritizer
-        $state = app(PrioritizerAgent::class)->handle($state);
+        $state = $this->getAgent(PrioritizerAgent::class, PrioritizerNeuronAgent::class)->handle($state);
 
         // 5) Decision maker
-        $state = app(DecisionMakerAgent::class)->handle($state);
+        $state = $this->getAgent(DecisionMakerAgent::class, DecisionMakerNeuronAgent::class)->handle($state);
 
         // 6) Linear writer (si procedeix)
         if ($state->shouldEscalate) {
-            $state = app(LinearWriterAgent::class)->handle($state);
+            $state = $this->getAgent(LinearWriterAgent::class, LinearWriterNeuronAgent::class)->handle($state);
             $status = 'escalated';
         } else {
             $status = 'processed';
@@ -56,6 +63,15 @@ class IncidentWorkflow
             'run_id' => $run?->id,
             'state' => $state->toArray(),
         ];
+    }
+
+    private function getAgent(string $heuristicClass, string $neuronClass): \App\AI\Contracts\AgentInterface
+    {
+        if (NeuronConfig::shouldUseLLM() && NeuronConfig::isConfigured()) {
+            return app($neuronClass);
+        }
+
+        return app($heuristicClass);
     }
 
     private function persistIfAvailable(string $text, IncidentState $state, string $status): ?IncidentRun

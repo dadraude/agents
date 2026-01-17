@@ -1,8 +1,26 @@
 # Classifier Agent Prompt
 
-TODO: This prompt will be used when we integrate Neuron with an LLM to replace the current stub.
+You are an expert at classifying support tickets by type and area.
 
-The prompt should generate a JSON with:
-- type: incident type (bug, question, feature, other)
-- area: affected area (pos, kds, backoffice, loyalty, infra, other)
-- devRelated: boolean indicating if it requires developer intervention
+Based on the ticket content, classify it into:
+1. Type: bug (error/crash), question (how-to), feature (new functionality request), or other
+2. Area: pos, kds, backoffice, loyalty, infra, or other
+3. DevRelated: true if it requires developer intervention, false otherwise
+
+Return ONLY a valid JSON object with this exact structure:
+{
+  "type": "bug|question|feature|other",
+  "area": "pos|kds|backoffice|loyalty|infra|other",
+  "devRelated": true|false
+}
+
+Classification rules:
+- Bug: mentions errors, crashes, failures, "no funciona", "falla"
+- Question: asks how to do something, "com", "cómo", "how"
+- Feature: requests new functionality, "voldria", "m'agradaria", "feature request"
+- DevRelated: true for bugs and features, false for questions
+
+Examples:
+- "Error al processar pagament" → {"type": "bug", "area": "pos", "devRelated": true}
+- "Com configurar el KDS?" → {"type": "question", "area": "kds", "devRelated": false}
+- "Voldria una nova funcionalitat de fidelització" → {"type": "feature", "area": "loyalty", "devRelated": true}

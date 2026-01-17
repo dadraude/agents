@@ -3,6 +3,7 @@
 namespace App\Integrations\Linear;
 
 use App\AI\Orchestrator\IncidentState;
+use App\Models\SupportTicket;
 
 class LinearMapper
 {
@@ -50,6 +51,79 @@ class LinearMapper
         $lines[] = '## Decision';
         $lines[] = '- Escalate: '.($state->shouldEscalate ? 'yes' : 'no');
         $lines[] = '- Reason: '.($state->decisionReason ?? 'n/a');
+
+        return implode("\n", $lines);
+    }
+
+    public function mapTicketToIssuePayload(SupportTicket $ticket): array
+    {
+        $teamId = config('services.linear.team_id');
+
+        $titlePrefix = strtoupper($ticket->severity ?? 'TICKET');
+        $title = "{$titlePrefix}: ".($ticket->title ?? 'Support Ticket');
+
+        $description = $this->buildTicketDescription($ticket);
+
+        $payload = [
+            'title' => $title,
+            'description' => $description,
+        ];
+
+        if ($teamId) {
+            $payload['teamId'] = $teamId;
+        }
+
+        return $payload;
+    }
+
+    private function buildTicketDescription(SupportTicket $ticket): string
+    {
+        $lines = [];
+        $lines[] = '## Description';
+        $lines[] = $ticket->description ?? '(none)';
+        $lines[] = '';
+        $lines[] = '## Ticket Information';
+        $lines[] = '- Ticket ID: '.$ticket->id;
+        $lines[] = '- Status: '.ucfirst($ticket->status ?? 'unknown');
+        $lines[] = '- Severity: '.ucfirst($ticket->severity ?? 'normal');
+        $lines[] = '- Priority: '.ucfirst($ticket->priority ?? 'normal');
+        $lines[] = '- Product: '.strtoupper($ticket->product ?? 'N/A');
+        $lines[] = '- Channel: '.ucfirst($ticket->channel ?? 'N/A');
+        $lines[] = '';
+
+        if ($ticket->customer_name || $ticket->customer_email) {
+            $lines[] = '## Customer';
+            if ($ticket->customer_name) {
+                $lines[] = '- Name: '.$ticket->customer_name;
+            }
+            if ($ticket->customer_email) {
+                $lines[] = '- Email: '.$ticket->customer_email;
+            }
+            if ($ticket->customer_phone) {
+                $lines[] = '- Phone: '.$ticket->customer_phone;
+            }
+            $lines[] = '';
+        }
+
+        if ($ticket->environment_device || $ticket->environment_os || $ticket->environment_app_version) {
+            $lines[] = '## Environment';
+            if ($ticket->environment_device) {
+                $lines[] = '- Device: '.$ticket->environment_device;
+            }
+            if ($ticket->environment_os) {
+                $lines[] = '- OS: '.$ticket->environment_os;
+            }
+            if ($ticket->environment_app_version) {
+                $lines[] = '- App Version: '.$ticket->environment_app_version;
+            }
+            $lines[] = '';
+        }
+
+        if ($ticket->sla_deadline) {
+            $lines[] = '## SLA';
+            $lines[] = '- Deadline: '.$ticket->sla_deadline->format('Y-m-d H:i:s');
+            $lines[] = '';
+        }
 
         return implode("\n", $lines);
     }
