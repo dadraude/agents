@@ -16,25 +16,55 @@ use App\AI\Neuron\LinearWriterNeuronAgent;
 use App\AI\Neuron\PrioritizerNeuronAgent;
 use App\AI\Neuron\ValidatorNeuronAgent;
 use App\Models\IncidentRun;
+use Illuminate\Support\Facades\Log;
 
 class IncidentWorkflow
 {
-    public function run(string $text): array
+    public function run(string $text, ?callable $progressCallback = null): array
     {
+        $workflowStartTime = microtime(true);
+        $inputLength = mb_strlen($text);
+
+        Log::info('Workflow started', [
+            'input_length' => $inputLength,
+            'input_preview' => mb_substr($text, 0, 200),
+            'llm_enabled' => NeuronConfig::shouldUseLLM(),
+            'llm_configured' => NeuronConfig::isConfigured(),
+        ]);
+
         $state = new IncidentState($text);
 
         // 1) Interpreter
+        $this->notifyProgress($progressCallback, 'Interpreter', 1, 6, 'processing');
+        Log::info('Workflow step: Interpreter', ['step' => 1, 'total_steps' => 6]);
         $state = $this->getAgent(InterpreterAgent::class, InterpreterNeuronAgent::class)->handle($state);
+        $this->notifyProgress($progressCallback, 'Interpreter', 1, 6, 'completed');
 
         // 2) Classifier
+        $this->notifyProgress($progressCallback, 'Classifier', 2, 6, 'processing');
+        Log::info('Workflow step: Classifier', ['step' => 2, 'total_steps' => 6]);
         $state = $this->getAgent(ClassifierAgent::class, ClassifierNeuronAgent::class)->handle($state);
+        $this->notifyProgress($progressCallback, 'Classifier', 2, 6, 'completed');
 
         // 3) Validator
+        $this->notifyProgress($progressCallback, 'Validator', 3, 6, 'processing');
+        Log::info('Workflow step: Validator', ['step' => 3, 'total_steps' => 6]);
         $state = $this->getAgent(ValidatorAgent::class, ValidatorNeuronAgent::class)->handle($state);
+        $this->notifyProgress($progressCallback, 'Validator', 3, 6, 'completed');
 
         if (! $state->isSufficient) {
             $status = 'needs_more_info';
+            $workflowTime = (microtime(true) - $workflowStartTime) * 1000;
             $this->persistIfAvailable($text, $state, $status);
+
+            Log::info('Workflow completed (needs more info)', [
+                'status' => $status,
+                'total_execution_time_ms' => round($workflowTime, 2),
+                'missing_info' => $state->missingInfo,
+            ]);
+
+            // Delay al final per poder veure el resultat
+            $this->delay();
 
             return [
                 'status' => $status,
@@ -43,20 +73,43 @@ class IncidentWorkflow
         }
 
         // 4) Prioritizer
+        $this->notifyProgress($progressCallback, 'Prioritizer', 4, 6, 'processing');
+        Log::info('Workflow step: Prioritizer', ['step' => 4, 'total_steps' => 6]);
         $state = $this->getAgent(PrioritizerAgent::class, PrioritizerNeuronAgent::class)->handle($state);
+        $this->notifyProgress($progressCallback, 'Prioritizer', 4, 6, 'completed');
 
         // 5) Decision maker
+        $this->notifyProgress($progressCallback, 'DecisionMaker', 5, 6, 'processing');
+        Log::info('Workflow step: DecisionMaker', ['step' => 5, 'total_steps' => 6]);
         $state = $this->getAgent(DecisionMakerAgent::class, DecisionMakerNeuronAgent::class)->handle($state);
+        $this->notifyProgress($progressCallback, 'DecisionMaker', 5, 6, 'completed');
 
         // 6) Linear writer (si procedeix)
         if ($state->shouldEscalate) {
+            $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'processing');
+            Log::info('Workflow step: LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true']);
             $state = $this->getAgent(LinearWriterAgent::class, LinearWriterNeuronAgent::class)->handle($state);
+            $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'completed');
             $status = 'escalated';
         } else {
+            $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'skipped');
+            Log::info('Workflow step: Skipping LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=false']);
             $status = 'processed';
         }
 
+        $workflowTime = (microtime(true) - $workflowStartTime) * 1000;
         $run = $this->persistIfAvailable($text, $state, $status);
+
+        Log::info('Workflow completed', [
+            'status' => $status,
+            'total_execution_time_ms' => round($workflowTime, 2),
+            'run_id' => $run?->id,
+            'linear_issue_id' => $state->linearIssueId,
+            'linear_issue_url' => $state->linearIssueUrl,
+        ]);
+
+        // Delay al final per poder veure el resultat abans que es recarregui la pàgina
+        $this->delay();
 
         return [
             'status' => $status,
@@ -88,5 +141,124 @@ class IncidentWorkflow
             'linear_issue_id' => $state->linearIssueId,
             'linear_issue_url' => $state->linearIssueUrl,
         ]);
+    }
+
+    /**
+     * Run workflow as a generator that yields events in real-time.
+     * This allows for true streaming of progress events.
+     *
+     * @return \Generator<string, array>
+     */
+    public function runStreaming(string $text): \Generator
+    {
+        $workflowStartTime = microtime(true);
+        $inputLength = mb_strlen($text);
+
+        Log::info('Workflow started (streaming)', [
+            'input_length' => $inputLength,
+            'input_preview' => mb_substr($text, 0, 200),
+            'llm_enabled' => NeuronConfig::shouldUseLLM(),
+            'llm_configured' => NeuronConfig::isConfigured(),
+        ]);
+
+        $state = new IncidentState($text);
+
+        // 1) Interpreter
+        yield 'agent-progress' => ['agent' => 'Interpreter', 'step' => 1, 'totalSteps' => 6, 'status' => 'processing'];
+        Log::info('Workflow step: Interpreter', ['step' => 1, 'total_steps' => 6]);
+        $state = $this->getAgent(InterpreterAgent::class, InterpreterNeuronAgent::class)->handle($state);
+        yield 'agent-progress' => ['agent' => 'Interpreter', 'step' => 1, 'totalSteps' => 6, 'status' => 'completed'];
+
+        // 2) Classifier
+        yield 'agent-progress' => ['agent' => 'Classifier', 'step' => 2, 'totalSteps' => 6, 'status' => 'processing'];
+        Log::info('Workflow step: Classifier', ['step' => 2, 'total_steps' => 6]);
+        $state = $this->getAgent(ClassifierAgent::class, ClassifierNeuronAgent::class)->handle($state);
+        yield 'agent-progress' => ['agent' => 'Classifier', 'step' => 2, 'totalSteps' => 6, 'status' => 'completed'];
+
+        // 3) Validator
+        yield 'agent-progress' => ['agent' => 'Validator', 'step' => 3, 'totalSteps' => 6, 'status' => 'processing'];
+        Log::info('Workflow step: Validator', ['step' => 3, 'total_steps' => 6]);
+        $state = $this->getAgent(ValidatorAgent::class, ValidatorNeuronAgent::class)->handle($state);
+        yield 'agent-progress' => ['agent' => 'Validator', 'step' => 3, 'totalSteps' => 6, 'status' => 'completed'];
+
+        if (! $state->isSufficient) {
+            $status = 'needs_more_info';
+            $workflowTime = (microtime(true) - $workflowStartTime) * 1000;
+            $run = $this->persistIfAvailable($text, $state, $status);
+
+            Log::info('Workflow completed (needs more info)', [
+                'status' => $status,
+                'total_execution_time_ms' => round($workflowTime, 2),
+                'missing_info' => $state->missingInfo,
+            ]);
+
+            // Delay al final per poder veure el resultat
+            $this->delay();
+
+            yield 'workflow-result' => [
+                'status' => $status,
+                'state' => $state->toArray(),
+                'run_id' => $run?->id,
+            ];
+
+            return;
+        }
+
+        // 4) Prioritizer
+        yield 'agent-progress' => ['agent' => 'Prioritizer', 'step' => 4, 'totalSteps' => 6, 'status' => 'processing'];
+        Log::info('Workflow step: Prioritizer', ['step' => 4, 'total_steps' => 6]);
+        $state = $this->getAgent(PrioritizerAgent::class, PrioritizerNeuronAgent::class)->handle($state);
+        yield 'agent-progress' => ['agent' => 'Prioritizer', 'step' => 4, 'totalSteps' => 6, 'status' => 'completed'];
+
+        // 5) Decision maker
+        yield 'agent-progress' => ['agent' => 'DecisionMaker', 'step' => 5, 'totalSteps' => 6, 'status' => 'processing'];
+        Log::info('Workflow step: DecisionMaker', ['step' => 5, 'total_steps' => 6]);
+        $state = $this->getAgent(DecisionMakerAgent::class, DecisionMakerNeuronAgent::class)->handle($state);
+        yield 'agent-progress' => ['agent' => 'DecisionMaker', 'step' => 5, 'totalSteps' => 6, 'status' => 'completed'];
+
+        // 6) Linear writer (si procedeix)
+        if ($state->shouldEscalate) {
+            yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'processing'];
+            Log::info('Workflow step: LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true']);
+            $state = $this->getAgent(LinearWriterAgent::class, LinearWriterNeuronAgent::class)->handle($state);
+            yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'completed'];
+            $status = 'escalated';
+        } else {
+            yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'skipped'];
+            Log::info('Workflow step: Skipping LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=false']);
+            $status = 'processed';
+        }
+
+        $workflowTime = (microtime(true) - $workflowStartTime) * 1000;
+        $run = $this->persistIfAvailable($text, $state, $status);
+
+        Log::info('Workflow completed', [
+            'status' => $status,
+            'total_execution_time_ms' => round($workflowTime, 2),
+            'run_id' => $run?->id,
+            'linear_issue_id' => $state->linearIssueId,
+            'linear_issue_url' => $state->linearIssueUrl,
+        ]);
+
+        // Delay al final per poder veure el resultat abans que es recarregui la pàgina
+        $this->delay();
+
+        yield 'workflow-result' => [
+            'status' => $status,
+            'run_id' => $run?->id,
+            'state' => $state->toArray(),
+        ];
+    }
+
+    private function notifyProgress(?callable $callback, string $agentName, int $step, int $totalSteps, string $status): void
+    {
+        if ($callback !== null) {
+            $callback($agentName, $step, $totalSteps, $status);
+        }
+    }
+
+    private function delay(): void
+    {
+        usleep(500000);
     }
 }

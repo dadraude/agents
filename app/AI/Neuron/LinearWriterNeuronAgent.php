@@ -66,8 +66,8 @@ class LinearWriterNeuronAgent extends BaseNeuronAgent
 
         // Generate improved description using LLM
         $userMessage = $this->buildUserMessage($state);
-        $response = $this->chat($userMessage)->run();
-        $description = trim($response->getMessage()->getContent());
+        $response = $this->chat($userMessage);
+        $description = trim($response->getContent());
 
         // Create Linear issue with improved description
         $payload = $this->mapper->mapStateToIssuePayload($state);
