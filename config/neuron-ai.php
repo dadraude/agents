@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This option controls the default AI provider that will be used by
-    | Neuron AI. Supported providers: "anthropic", "openai", "ollama"
+    | Neuron AI. Supported providers: "anthropic", "openai", "ollama", "gemini"
     |
     */
 
@@ -38,6 +38,11 @@ return [
         'ollama' => [
             'base_url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
             'model' => env('OLLAMA_MODEL', 'llama2'),
+        ],
+
+        'gemini' => [
+            'key' => env('GEMINI_API_KEY'),
+            'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
         ],
     ],
 
