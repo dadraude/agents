@@ -12,8 +12,8 @@ use function Pest\Laravel\mock;
 uses(RefreshDatabase::class);
 
 test('index displays all tickets', function () {
-    $ticket1 = SupportTicket::factory()->create(['id' => 'TKT-001', 'title' => 'Ticket 1']);
-    $ticket2 = SupportTicket::factory()->create(['id' => 'TKT-002', 'title' => 'Ticket 2']);
+    $ticket1 = SupportTicket::factory()->asNew()->create(['id' => 'TKT-001', 'title' => 'Ticket 1']);
+    $ticket2 = SupportTicket::factory()->asNew()->create(['id' => 'TKT-002', 'title' => 'Ticket 2']);
 
     $response = $this->get(route('support.index'));
 
@@ -400,4 +400,147 @@ test('createLinear handles exceptions gracefully', function () {
 
     $response->assertRedirect(route('support.show', $ticket->id))
         ->assertSessionHas('error');
+});
+
+test('index filters tickets by pending tab', function () {
+    $pending1 = SupportTicket::factory()->create(['id' => 'TKT-001', 'status' => 'new']);
+    $pending2 = SupportTicket::factory()->asNew()->create(['id' => 'TKT-002']);
+    $review = SupportTicket::factory()->create(['id' => 'TKT-003', 'status' => 'in_review']);
+    $completed = SupportTicket::factory()->create(['id' => 'TKT-004', 'status' => 'processed']);
+
+    $response = $this->get(route('support.index', ['tab' => 'pending']));
+
+    $response->assertSuccessful()
+        ->assertSee('TKT-001')
+        ->assertSee('TKT-002')
+        ->assertDontSee('TKT-003')
+        ->assertDontSee('TKT-004');
+});
+
+test('index filters tickets by needs_review tab', function () {
+    $pending = SupportTicket::factory()->create(['id' => 'TKT-001', 'status' => 'new']);
+    $review1 = SupportTicket::factory()->create(['id' => 'TKT-002', 'status' => 'in_review']);
+    $review2 = SupportTicket::factory()->create(['id' => 'TKT-003', 'status' => 'in_review']);
+    $completed = SupportTicket::factory()->create(['id' => 'TKT-004', 'status' => 'processed']);
+
+    $response = $this->get(route('support.index', ['tab' => 'needs_review']));
+
+    $response->assertSuccessful()
+        ->assertSee('TKT-002')
+        ->assertSee('TKT-003')
+        ->assertDontSee('TKT-001')
+        ->assertDontSee('TKT-004');
+});
+
+test('index filters tickets by completed tab', function () {
+    $pending = SupportTicket::factory()->create(['id' => 'TKT-001', 'status' => 'new']);
+    $review = SupportTicket::factory()->create(['id' => 'TKT-002', 'status' => 'in_review']);
+    $completed1 = SupportTicket::factory()->create(['id' => 'TKT-003', 'status' => 'processed']);
+    $completed2 = SupportTicket::factory()->create(['id' => 'TKT-004', 'status' => 'processed']);
+
+    $response = $this->get(route('support.index', ['tab' => 'completed']));
+
+    $response->assertSuccessful()
+        ->assertSee('TKT-003')
+        ->assertSee('TKT-004')
+        ->assertDontSee('TKT-001')
+        ->assertDontSee('TKT-002');
+});
+
+test('index search filters tickets by title', function () {
+    $ticket1 = SupportTicket::factory()->asNew()->create(['id' => 'TKT-001', 'title' => 'Payment Issue']);
+    $ticket2 = SupportTicket::factory()->asNew()->create(['id' => 'TKT-002', 'title' => 'Login Problem']);
+    $ticket3 = SupportTicket::factory()->asNew()->create(['id' => 'TKT-003', 'title' => 'Payment Error']);
+
+    $response = $this->get(route('support.index', ['tab' => 'pending', 'search' => 'Payment']));
+
+    $response->assertSuccessful()
+        ->assertSee('TKT-001')
+        ->assertSee('TKT-003')
+        ->assertDontSee('TKT-002');
+});
+
+test('index search filters tickets by description', function () {
+    $ticket1 = SupportTicket::factory()->asNew()->create(['id' => 'TKT-001', 'description' => 'Cannot process payments']);
+    $ticket2 = SupportTicket::factory()->asNew()->create(['id' => 'TKT-002', 'description' => 'Login button not working']);
+    $ticket3 = SupportTicket::factory()->asNew()->create(['id' => 'TKT-003', 'description' => 'Payment gateway error']);
+
+    $response = $this->get(route('support.index', ['tab' => 'pending', 'search' => 'payment']));
+
+    $response->assertSuccessful()
+        ->assertSee('TKT-001')
+        ->assertSee('TKT-003')
+        ->assertDontSee('TKT-002');
+});
+
+test('index filters tickets by severity', function () {
+    $critical = SupportTicket::factory()->asNew()->create(['id' => 'TKT-001', 'severity' => 'critical']);
+    $high = SupportTicket::factory()->asNew()->create(['id' => 'TKT-002', 'severity' => 'high']);
+    $medium = SupportTicket::factory()->asNew()->create(['id' => 'TKT-003', 'severity' => 'medium']);
+
+    $response = $this->get(route('support.index', ['tab' => 'pending', 'severity' => 'critical']));
+
+    $response->assertSuccessful()
+        ->assertSee('TKT-001')
+        ->assertDontSee('TKT-002')
+        ->assertDontSee('TKT-003');
+});
+
+test('index filters tickets by priority', function () {
+    $urgent = SupportTicket::factory()->asNew()->create(['id' => 'TKT-001', 'priority' => 'urgent']);
+    $high = SupportTicket::factory()->asNew()->create(['id' => 'TKT-002', 'priority' => 'high']);
+    $normal = SupportTicket::factory()->asNew()->create(['id' => 'TKT-003', 'priority' => 'normal']);
+
+    $response = $this->get(route('support.index', ['tab' => 'pending', 'priority' => 'urgent']));
+
+    $response->assertSuccessful()
+        ->assertSee('TKT-001')
+        ->assertDontSee('TKT-002')
+        ->assertDontSee('TKT-003');
+});
+
+test('index filters tickets by product', function () {
+    $pos = SupportTicket::factory()->asNew()->create(['id' => 'TKT-001', 'product' => 'pos']);
+    $kds = SupportTicket::factory()->asNew()->create(['id' => 'TKT-002', 'product' => 'kds']);
+    $backoffice = SupportTicket::factory()->asNew()->create(['id' => 'TKT-003', 'product' => 'backoffice']);
+
+    $response = $this->get(route('support.index', ['tab' => 'pending', 'product' => 'pos']));
+
+    $response->assertSuccessful()
+        ->assertSee('TKT-001')
+        ->assertDontSee('TKT-002')
+        ->assertDontSee('TKT-003');
+});
+
+test('index combines search and filters', function () {
+    $ticket1 = SupportTicket::factory()->asNew()->create([
+        'id' => 'TKT-001',
+        'title' => 'Payment Issue',
+        'severity' => 'critical',
+        'product' => 'pos',
+    ]);
+    $ticket2 = SupportTicket::factory()->asNew()->create([
+        'id' => 'TKT-002',
+        'title' => 'Payment Problem',
+        'severity' => 'high',
+        'product' => 'pos',
+    ]);
+    $ticket3 = SupportTicket::factory()->asNew()->create([
+        'id' => 'TKT-003',
+        'title' => 'Payment Issue',
+        'severity' => 'critical',
+        'product' => 'kds',
+    ]);
+
+    $response = $this->get(route('support.index', [
+        'tab' => 'pending',
+        'search' => 'Payment',
+        'severity' => 'critical',
+        'product' => 'pos',
+    ]));
+
+    $response->assertSuccessful()
+        ->assertSee('TKT-001')
+        ->assertDontSee('TKT-002')
+        ->assertDontSee('TKT-003');
 });
