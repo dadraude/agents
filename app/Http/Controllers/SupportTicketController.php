@@ -7,6 +7,8 @@ use App\Integrations\Linear\LinearClient;
 use App\Integrations\Linear\LinearMapper;
 use App\Models\SupportTicket;
 use Illuminate\Http\Request;
+use Illuminate\Http\StreamedEvent;
+use Illuminate\Support\Facades\Cache;
 
 class SupportTicketController extends Controller
 {
@@ -16,20 +18,70 @@ class SupportTicketController extends Controller
 
         $query = SupportTicket::query();
 
-        if ($tab === 'processed') {
+        // Filter by tab
+        if ($tab === 'needs_review') {
+            $query->where('status', 'in_review');
+        } elseif ($tab === 'completed') {
             $query->where('status', 'processed');
         } else {
+            // pending: status is 'new' or null
             $query->where(function ($q) {
-                $q->where('status', '!=', 'processed')
+                $q->where('status', 'new')
                     ->orWhereNull('status');
             });
         }
 
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // Severity filter
+        if ($request->filled('severity')) {
+            $query->where('severity', $request->query('severity'));
+        }
+
+        // Priority filter
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->query('priority'));
+        }
+
+        // Product filter
+        if ($request->filled('product')) {
+            $query->where('product', $request->query('product'));
+        }
+
+        // Eager load incident runs (most recent first) for review info
+        $query->with(['incidentRuns' => function ($q) {
+            $q->latest()->limit(1);
+        }]);
+
         $tickets = $query->latest()->paginate(15)->withQueryString();
+
+        // Calculate ticket counts for each tab (without search/filter filters)
+        $pendingCount = SupportTicket::where(function ($q) {
+            $q->where('status', 'new')
+                ->orWhereNull('status');
+        })->count();
+
+        $needsReviewCount = SupportTicket::where('status', 'in_review')->count();
+
+        $completedCount = SupportTicket::where('status', 'processed')->count();
 
         return view('support.index', [
             'tickets' => $tickets,
             'activeTab' => $tab,
+            'search' => $request->query('search'),
+            'severity' => $request->query('severity'),
+            'priority' => $request->query('priority'),
+            'product' => $request->query('product'),
+            'pendingCount' => $pendingCount,
+            'needsReviewCount' => $needsReviewCount,
+            'completedCount' => $completedCount,
         ]);
     }
 
@@ -103,6 +155,93 @@ class SupportTicketController extends Controller
         }
     }
 
+    public function processStream(string $id, Request $request, IncidentWorkflow $workflow)
+    {
+        $ticket = SupportTicket::find($id);
+
+        if (! $ticket) {
+            return response()->json(['error' => 'Ticket not found'], 404);
+        }
+
+        $text = $ticket->description ?? $ticket->title ?? '';
+
+        if (trim($text) === '') {
+            return response()->json(['error' => 'Ticket has no valid description'], 400);
+        }
+
+        return response()->eventStream(function () use ($workflow, $text, $ticket, $id) {
+            try {
+                $result = null;
+
+                // Use the streaming generator to yield events in real-time
+                foreach ($workflow->runStreaming($text) as $eventType => $eventData) {
+                    if ($eventType === 'agent-progress') {
+                        yield new StreamedEvent(
+                            event: 'agent-progress',
+                            data: json_encode($eventData)
+                        );
+                    } elseif ($eventType === 'workflow-result') {
+                        $result = $eventData;
+                    }
+                }
+
+                // Update ticket status based on workflow result
+                if (! $result) {
+                    throw new \RuntimeException('Workflow did not return a result');
+                }
+
+                $status = $result['status'] ?? null;
+                $state = $result['state'] ?? [];
+
+                if ($status === 'processed') {
+                    $ticket->status = 'processed';
+                } elseif ($status === 'escalated') {
+                    $ticket->status = 'in_review';
+                } elseif ($status === 'needs_more_info') {
+                    $ticket->status = 'in_review';
+                }
+
+                // Save Linear URL if exists
+                if (isset($state['linearIssueUrl']) && ! empty($state['linearIssueUrl'])) {
+                    $ticket->linear_issue_url = $state['linearIssueUrl'];
+                    $ticket->linear_issue_id = $state['linearIssueId'] ?? null;
+                }
+
+                $ticket->save();
+
+                // Relate IncidentRun to ticket if created
+                if (isset($result['run_id']) && $result['run_id']) {
+                    $incidentRun = \App\Models\IncidentRun::find($result['run_id']);
+                    if ($incidentRun) {
+                        $incidentRun->support_ticket_id = $ticket->id;
+                        $incidentRun->save();
+                    }
+                }
+
+                // Store workflow result in cache for the agents view
+                // Use cache instead of session because session may not persist during stream
+                $cacheKey = "workflow_result_{$id}";
+                Cache::put($cacheKey, $result, now()->addMinutes(10));
+
+                // Emit completion event
+                yield new StreamedEvent(
+                    event: 'workflow-complete',
+                    data: json_encode([
+                        'status' => $status,
+                        'redirectUrl' => route('support.agents', $id),
+                    ])
+                );
+            } catch (\Exception $e) {
+                yield new StreamedEvent(
+                    event: 'workflow-error',
+                    data: json_encode([
+                        'error' => $e->getMessage(),
+                    ])
+                );
+            }
+        });
+    }
+
     public function agents(string $id): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
     {
         $ticket = SupportTicket::find($id);
@@ -112,7 +251,14 @@ class SupportTicketController extends Controller
                 ->with('error', 'Ticket not found');
         }
 
-        $workflowResult = session('workflow_result');
+        // Try to get workflow result from cache first, then from session
+        $cacheKey = "workflow_result_{$id}";
+        $workflowResult = Cache::get($cacheKey) ?? session('workflow_result');
+
+        // Clear cache after retrieving
+        if (Cache::has($cacheKey)) {
+            Cache::forget($cacheKey);
+        }
 
         return view('support.agents', [
             'ticket' => $ticket,
@@ -183,7 +329,21 @@ class SupportTicketController extends Controller
             $message .= ' Errors: '.implode('; ', $errors);
         }
 
-        return redirect()->route('support.index', ['tab' => 'processed'])
+        // Redirect to appropriate tab based on result
+        $redirectTab = 'pending';
+        if ($processed > 0) {
+            // Check if any ticket ended up in review
+            $reviewCount = SupportTicket::whereIn('id', $ticketIds)
+                ->where('status', 'in_review')
+                ->count();
+            if ($reviewCount > 0) {
+                $redirectTab = 'needs_review';
+            } else {
+                $redirectTab = 'completed';
+            }
+        }
+
+        return redirect()->route('support.index', ['tab' => $redirectTab])
             ->with($errors ? 'error' : 'success', $message);
     }
 

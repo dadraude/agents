@@ -74,4 +74,52 @@ class SupportTicket extends Model
     {
         return $this->hasMany(IncidentRun::class, 'support_ticket_id');
     }
+
+    /**
+     * Get review information from the most recent incident run.
+     *
+     * @return array{type: string|null, reason: string|null, data: array}|null
+     */
+    public function getReviewInfo(): ?array
+    {
+        if ($this->status !== 'in_review') {
+            return null;
+        }
+
+        $latestRun = $this->incidentRuns()->latest()->first();
+
+        if (! $latestRun || ! $latestRun->state_json) {
+            return null;
+        }
+
+        $state = $latestRun->state_json;
+
+        // Check if it needs more info
+        if (isset($state['isSufficient']) && ! $state['isSufficient']) {
+            $missingInfo = $state['missingInfo'] ?? [];
+            $missingInfoLabels = array_map(function ($info) {
+                return ucfirst(str_replace('_', ' ', $info));
+            }, $missingInfo);
+
+            return [
+                'type' => 'needs_more_info',
+                'reason' => 'Missing information: '.implode(', ', $missingInfoLabels),
+                'data' => $missingInfo,
+            ];
+        }
+
+        // Check if it was escalated
+        if (isset($state['shouldEscalate']) && $state['shouldEscalate']) {
+            return [
+                'type' => 'escalated',
+                'reason' => $state['decisionReason'] ?? 'Ticket escalated to development team',
+                'data' => [
+                    'linear_issue_url' => $state['linearIssueUrl'] ?? null,
+                    'linear_issue_id' => $state['linearIssueId'] ?? null,
+                ],
+            ];
+        }
+
+        return null;
+    }
 }

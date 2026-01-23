@@ -11,6 +11,7 @@ Route::prefix('support')->name('support.')->group(function () {
     Route::get('/', [SupportTicketController::class, 'index'])->name('index');
     Route::get('/{id}', [SupportTicketController::class, 'show'])->name('show');
     Route::post('/{id}/process', [SupportTicketController::class, 'process'])->name('process');
+    Route::post('/{id}/process-stream', [SupportTicketController::class, 'processStream'])->name('processStream');
     Route::post('/{id}/create-linear', [SupportTicketController::class, 'createLinear'])->name('createLinear');
     Route::post('/process-batch', [SupportTicketController::class, 'processBatch'])->name('processBatch');
     Route::get('/{id}/agents', [SupportTicketController::class, 'agents'])->name('agents');
