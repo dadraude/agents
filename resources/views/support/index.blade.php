@@ -8,22 +8,113 @@
         </p>
     </div>
 
+    <!-- Search and Filters -->
+    <div class="mb-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <form method="GET" action="{{ route('support.index') }}" class="space-y-4">
+            <input type="hidden" name="tab" value="{{ $activeTab }}">
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Search -->
+                <div class="md:col-span-2">
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
+                    <input type="text" 
+                           id="search" 
+                           name="search" 
+                           value="{{ $search ?? '' }}" 
+                           placeholder="Search by title or description..."
+                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+
+                <!-- Severity Filter -->
+                <div>
+                    <label for="severity" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Severity</label>
+                    <select id="severity" 
+                            name="severity" 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All</option>
+                        <option value="critical" @if(($severity ?? '') === 'critical') selected @endif>Critical</option>
+                        <option value="high" @if(($severity ?? '') === 'high') selected @endif>High</option>
+                        <option value="medium" @if(($severity ?? '') === 'medium') selected @endif>Medium</option>
+                        <option value="low" @if(($severity ?? '') === 'low') selected @endif>Low</option>
+                    </select>
+                </div>
+
+                <!-- Priority Filter -->
+                <div>
+                    <label for="priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                    <select id="priority" 
+                            name="priority" 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All</option>
+                        @php
+                            $priorities = \App\Models\SupportTicket::distinct()->whereNotNull('priority')->pluck('priority')->sort()->values();
+                        @endphp
+                        @foreach($priorities as $priorityValue)
+                            <option value="{{ $priorityValue }}" @if(($priority ?? '') === $priorityValue) selected @endif>{{ ucfirst($priorityValue) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Product Filter -->
+                <div>
+                    <label for="product" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Product</label>
+                    <select id="product" 
+                            name="product" 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All</option>
+                        @php
+                            $products = \App\Models\SupportTicket::distinct()->whereNotNull('product')->pluck('product')->sort()->values();
+                        @endphp
+                        @foreach($products as $productValue)
+                            <option value="{{ $productValue }}" @if(($product ?? '') === $productValue) selected @endif>{{ strtoupper($productValue) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Filter Actions -->
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Apply Filters
+                    </button>
+                    <a href="{{ route('support.index', ['tab' => $activeTab]) }}" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                        Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
     <div class="mb-6 border-b border-gray-200 dark:border-gray-700">
         <nav class="-mb-px flex gap-6" aria-label="Tabs">
-            <a href="{{ route('support.index', ['tab' => 'pending']) }}" 
+            <a href="{{ route('support.index', array_merge(request()->query(), ['tab' => 'pending'])) }}" 
                class="@if($activeTab === 'pending') border-blue-500 text-blue-600 dark:text-blue-400 @else border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 @endif whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors">
                 Pending
+                <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full @if($activeTab === 'pending') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 @else bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 @endif">
+                    {{ $pendingCount }}
+                </span>
             </a>
-            <a href="{{ route('support.index', ['tab' => 'processed']) }}" 
-               class="@if($activeTab === 'processed') border-blue-500 text-blue-600 dark:text-blue-400 @else border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 @endif whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors">
-                Processed
+            <a href="{{ route('support.index', array_merge(request()->query(), ['tab' => 'needs_review'])) }}" 
+               class="@if($activeTab === 'needs_review') border-blue-500 text-blue-600 dark:text-blue-400 @else border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 @endif whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors">
+                Needs Review
+                <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full @if($activeTab === 'needs_review') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 @else bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 @endif">
+                    {{ $needsReviewCount }}
+                </span>
+            </a>
+            <a href="{{ route('support.index', array_merge(request()->query(), ['tab' => 'completed'])) }}" 
+               class="@if($activeTab === 'completed') border-blue-500 text-blue-600 dark:text-blue-400 @else border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 @endif whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors">
+                Completed
+                <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full @if($activeTab === 'completed') bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 @else bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400 @endif">
+                    {{ $completedCount }}
+                </span>
             </a>
         </nav>
     </div>
 
     <form id="tickets-form" method="POST" action="{{ route('support.processBatch') }}">
         @csrf
-        @if($activeTab !== 'processed')
+        @if($activeTab === 'pending')
             <div class="mb-4 flex items-center justify-between">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" id="select-all" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
@@ -41,11 +132,11 @@
                     <div class="p-6">
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex items-start gap-3 flex-1">
-                                @if($activeTab !== 'processed')
+                                @if($activeTab === 'pending')
                                     <input type="checkbox" name="ticket_ids[]" value="{{ $ticket->id }}" class="ticket-checkbox mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
                                 @endif
                                 <div class="flex-1">
-                                    <div class="flex items-center gap-3 mb-2">
+                                    <div class="flex items-center gap-3 mb-2 flex-wrap">
                                         <a href="{{ route('support.show', $ticket->id) }}" class="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400">
                                             {{ $ticket->id }}
                                         </a>
@@ -65,6 +156,23 @@
                                             @endif">
                                             {{ ucfirst($ticket->severity ?? 'normal') }}
                                         </span>
+                                        
+                                        @if($activeTab === 'needs_review')
+                                            @php
+                                                $reviewInfo = $ticket->getReviewInfo();
+                                            @endphp
+                                            @if($reviewInfo)
+                                                @if($reviewInfo['type'] === 'escalated')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" title="{{ $reviewInfo['reason'] }}">
+                                                        ⚠️ Escalated
+                                                    </span>
+                                                @elseif($reviewInfo['type'] === 'needs_more_info')
+                                                    <span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300" title="{{ $reviewInfo['reason'] }}">
+                                                        ℹ️ Needs Info
+                                                    </span>
+                                                @endif
+                                            @endif
+                                        @endif
                                     </div>
                                     <a href="{{ route('support.show', $ticket->id) }}" class="block">
                                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 dark:hover:text-blue-400">
@@ -74,6 +182,52 @@
                                     <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                                         {{ $ticket->description ?? 'No description' }}
                                     </p>
+                                    
+                                    @if($activeTab === 'needs_review')
+                                        @php
+                                            $reviewInfo = $ticket->getReviewInfo();
+                                        @endphp
+                                        @if($reviewInfo)
+                                            <div class="mt-3 p-3 rounded-lg
+                                                @if($reviewInfo['type'] === 'escalated') bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800
+                                                @else bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800
+                                                @endif">
+                                                <p class="text-sm font-medium
+                                                    @if($reviewInfo['type'] === 'escalated') text-blue-900 dark:text-blue-200
+                                                    @else text-yellow-900 dark:text-yellow-200
+                                                    @endif mb-1">
+                                                    @if($reviewInfo['type'] === 'escalated')
+                                                        Escalated to Development
+                                                    @else
+                                                        Missing Information
+                                                    @endif
+                                                </p>
+                                                <p class="text-xs
+                                                    @if($reviewInfo['type'] === 'escalated') text-blue-800 dark:text-blue-300
+                                                    @else text-yellow-800 dark:text-yellow-300
+                                                    @endif">
+                                                    {{ $reviewInfo['reason'] }}
+                                                </p>
+                                                @if($reviewInfo['type'] === 'escalated' && isset($reviewInfo['data']['linear_issue_url']))
+                                                    <a href="{{ $reviewInfo['data']['linear_issue_url'] }}" target="_blank" class="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                                                        View Linear Issue
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                                        </svg>
+                                                    </a>
+                                                @endif
+                                                @if($reviewInfo['type'] === 'needs_more_info' && !empty($reviewInfo['data']))
+                                                    <ul class="mt-2 list-disc list-inside text-xs
+                                                        @if($reviewInfo['type'] === 'needs_more_info') text-yellow-800 dark:text-yellow-300
+                                                        @endif">
+                                                        @foreach($reviewInfo['data'] as $missing)
+                                                            <li>{{ ucfirst(str_replace('_', ' ', $missing)) }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -112,7 +266,7 @@
         </div>
     @endif
 
-    @if($activeTab !== 'processed')
+    @if($activeTab === 'pending')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const selectAllCheckbox = document.getElementById('select-all');
@@ -154,10 +308,40 @@
                         alert('Please select at least one ticket to process.');
                         return false;
                     }
+                    
+                    // Show loading overlay
+                    showLoadingOverlay();
                 });
 
                 updateSelectedCount();
             });
+
+            function showLoadingOverlay() {
+                // Create overlay
+                const overlay = document.createElement('div');
+                overlay.id = 'loading-overlay';
+                overlay.className = 'fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center';
+                overlay.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-xl max-w-md w-full mx-4">
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="relative w-16 h-16">
+                                <div class="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full"></div>
+                                <div class="absolute inset-0 border-4 border-blue-600 dark:border-blue-400 rounded-full border-t-transparent animate-spin"></div>
+                            </div>
+                            <div class="text-center">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Processing tickets...</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Please wait while the AI agents process your selected tickets.</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                
+                // Disable form elements
+                document.getElementById('process-selected').disabled = true;
+                document.querySelectorAll('.ticket-checkbox').forEach(cb => cb.disabled = true);
+                document.getElementById('select-all').disabled = true;
+            }
         </script>
     @endif
 @endsection

@@ -25,6 +25,43 @@
             <!-- Processing Summary -->
             <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Processing Summary</h2>
+                @php
+                    $trace = $workflowResult['state']['trace'] ?? [];
+                    $llmCount = 0;
+                    $heuristicCount = 0;
+                    foreach ($trace as $entry) {
+                        $method = $entry['data']['method'] ?? 'heuristic';
+                        if ($method === 'llm') {
+                            $llmCount++;
+                        } else {
+                            $heuristicCount++;
+                        }
+                    }
+                @endphp
+                <div class="mb-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">AI Method Usage</h3>
+                    <div class="flex items-center gap-4">
+                        @if($llmCount > 0)
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-purple-500 rounded-full"></span>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">
+                                    <strong>{{ $llmCount }}</strong> agent(s) used <strong>LLM (AI)</strong>
+                                </span>
+                            </div>
+                        @endif
+                        @if($heuristicCount > 0)
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 bg-gray-400 rounded-full"></span>
+                                <span class="text-sm text-gray-700 dark:text-gray-300">
+                                    <strong>{{ $heuristicCount }}</strong> agent(s) used <strong>Heuristic</strong>
+                                </span>
+                            </div>
+                        @endif
+                        @if($llmCount === 0 && $heuristicCount === 0)
+                            <span class="text-sm text-gray-500 dark:text-gray-400">No method information available</span>
+                        @endif
+                    </div>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <dt class="text-xs text-gray-500 dark:text-gray-400">Final Status</dt>
@@ -73,10 +110,19 @@
                             $entry = $traceByAgent[$agentName] ?? null;
                         @endphp
                         @if($entry)
+                            @php
+                                $method = $entry['data']['method'] ?? 'heuristic';
+                                $isLLM = $method === 'llm';
+                            @endphp
                             <div class="relative pl-8 pb-6 border-l-2 border-gray-200 dark:border-gray-700 last:border-0 last:pb-0">
-                                <div class="absolute -left-2 top-0 w-4 h-4 bg-blue-600 rounded-full border-2 border-white dark:border-gray-800"></div>
+                                <div class="absolute -left-2 top-0 w-4 h-4 {{ $isLLM ? 'bg-purple-600' : 'bg-gray-400' }} rounded-full border-2 border-white dark:border-gray-800"></div>
                                 <div class="flex items-start justify-between mb-2">
-                                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ $agentName }}</h3>
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ $agentName }}</h3>
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-medium {{ $isLLM ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400' }}">
+                                            {{ $isLLM ? '🤖 LLM' : '⚙️ Heuristic' }}
+                                        </span>
+                                    </div>
                                     <span class="text-xs text-gray-500 dark:text-gray-400">
                                         {{ isset($entry['ts']) ? \Carbon\Carbon::parse($entry['ts'])->format('H:i:s') : 'N/A' }}
                                     </span>

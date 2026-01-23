@@ -47,9 +47,9 @@
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions</h2>
                 <div class="flex flex-col gap-3">
                     @if($ticket->status !== 'processed')
-                        <form action="{{ route('support.process', $ticket->id) }}" method="POST">
+                        <form id="process-form" action="{{ route('support.processStream', $ticket->id) }}" method="POST">
                             @csrf
-                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                            <button type="submit" id="process-button" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                 </svg>
@@ -184,4 +184,207 @@
             @endif
         </div>
     </div>
+
+    @if($ticket->status !== 'processed')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const processForm = document.getElementById('process-form');
+                const processButton = document.getElementById('process-button');
+                
+                if (processForm && processButton) {
+                    processForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        showLoadingOverlay();
+                        connectToStream();
+                    });
+                }
+
+                const agents = [
+                    { name: 'Interpreter', step: 1 },
+                    { name: 'Classifier', step: 2 },
+                    { name: 'Validator', step: 3 },
+                    { name: 'Prioritizer', step: 4 },
+                    { name: 'DecisionMaker', step: 5 },
+                    { name: 'LinearWriter', step: 6 },
+                ];
+
+                function showLoadingOverlay() {
+                    // Create overlay
+                    const overlay = document.createElement('div');
+                    overlay.id = 'loading-overlay';
+                    overlay.className = 'fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center';
+                    
+                    const agentsList = agents.map(agent => `
+                        <div class="agent-item flex items-center gap-3 p-3 rounded-lg" data-agent="${agent.name}">
+                            <div class="agent-icon w-6 h-6 flex items-center justify-center">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" data-icon="pending">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                <div class="hidden spinner" data-icon="processing">
+                                    <div class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                                <svg class="hidden w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" data-icon="completed">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-sm font-medium text-gray-700 dark:text-gray-300">${agent.name}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Pending...</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    overlay.innerHTML = `
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-xl max-w-lg w-full mx-4">
+                            <div class="flex flex-col gap-6">
+                                <div class="text-center">
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Processing ticket...</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Please wait while the AI agents analyze and process this ticket.</p>
+                                </div>
+                                <div class="space-y-2">
+                                    ${agentsList}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(overlay);
+                    
+                    // Disable button
+                    processButton.disabled = true;
+                    processButton.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+
+                function updateAgentStatus(agentName, status) {
+                    const agentItem = document.querySelector(`[data-agent="${agentName}"]`);
+                    if (!agentItem) return;
+
+                    const icons = agentItem.querySelectorAll('[data-icon]');
+                    icons.forEach(icon => icon.classList.add('hidden'));
+
+                    const statusText = agentItem.querySelector('.text-xs');
+                    
+                    if (status === 'processing') {
+                        agentItem.querySelector('[data-icon="processing"]').classList.remove('hidden');
+                        statusText.textContent = 'Processing...';
+                        statusText.className = 'text-xs text-blue-600 dark:text-blue-400';
+                        agentItem.className = 'agent-item flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20';
+                    } else if (status === 'completed') {
+                        agentItem.querySelector('[data-icon="completed"]').classList.remove('hidden');
+                        statusText.textContent = 'Completed';
+                        statusText.className = 'text-xs text-green-600 dark:text-green-400';
+                        agentItem.className = 'agent-item flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20';
+                    } else if (status === 'skipped') {
+                        agentItem.querySelector('[data-icon="pending"]').classList.remove('hidden');
+                        statusText.textContent = 'Skipped';
+                        statusText.className = 'text-xs text-gray-500 dark:text-gray-400';
+                        agentItem.className = 'agent-item flex items-center gap-3 p-3 rounded-lg opacity-50';
+                    }
+                }
+
+                function connectToStream() {
+                    const form = document.getElementById('process-form');
+                    const formData = new FormData(form);
+                    
+                    // Use fetch with POST to start the stream
+                    fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'text/event-stream',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: formData,
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to start stream');
+                        }
+                        
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+
+                        function readStream() {
+                            reader.read().then(({ done, value }) => {
+                                if (done) {
+                                    return;
+                                }
+
+                                buffer += decoder.decode(value, { stream: true });
+                                const parts = buffer.split('\n\n');
+                                buffer = parts.pop() || '';
+
+                                parts.forEach(part => {
+                                    if (!part.trim()) return;
+                                    
+                                    let eventType = null;
+                                    let data = '';
+                                    
+                                    part.split('\n').forEach(line => {
+                                        if (line.startsWith('event: ')) {
+                                            eventType = line.substring(7).trim();
+                                        } else if (line.startsWith('data: ')) {
+                                            data += (data ? '\n' : '') + line.substring(6);
+                                        }
+                                    });
+
+                                    if (eventType && data) {
+                                        try {
+                                            const parsed = JSON.parse(data);
+                                            
+                                            if (eventType === 'agent-progress') {
+                                                updateAgentStatus(parsed.agent, parsed.status);
+                                            } else if (eventType === 'workflow-complete') {
+                                                setTimeout(() => {
+                                                    window.location.href = parsed.redirectUrl;
+                                                }, 1000);
+                                            } else if (eventType === 'workflow-error') {
+                                                showError(parsed.error || 'Unknown error occurred');
+                                            }
+                                        } catch (e) {
+                                            console.error('Error parsing event data:', e, data);
+                                        }
+                                    }
+                                });
+
+                                readStream();
+                            }).catch(error => {
+                                console.error('Stream error:', error);
+                                showError('Error reading stream: ' + error.message);
+                            });
+                        }
+
+                        readStream();
+                    })
+                    .catch(error => {
+                        console.error('Error connecting to stream:', error);
+                        showError('Failed to connect to processing stream');
+                    });
+                }
+
+                function showError(message) {
+                    const overlay = document.getElementById('loading-overlay');
+                    if (overlay) {
+                        overlay.innerHTML = `
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-xl max-w-md w-full mx-4">
+                                <div class="flex flex-col items-center gap-4">
+                                    <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                                        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="text-center">
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Error</h3>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">${message}</p>
+                                        <button onclick="document.getElementById('loading-overlay').remove(); document.getElementById('process-button').disabled = false; document.getElementById('process-button').classList.remove('opacity-50', 'cursor-not-allowed');" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            });
+        </script>
+    @endif
 @endsection
