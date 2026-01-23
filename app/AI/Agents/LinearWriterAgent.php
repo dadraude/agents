@@ -6,6 +6,7 @@ use App\AI\Contracts\AgentInterface;
 use App\AI\Orchestrator\IncidentState;
 use App\Integrations\Linear\LinearClient;
 use App\Integrations\Linear\LinearMapper;
+use Illuminate\Support\Facades\Log;
 
 class LinearWriterAgent implements AgentInterface
 {
@@ -21,23 +22,51 @@ class LinearWriterAgent implements AgentInterface
 
     public function handle(IncidentState $state): IncidentState
     {
+        $startTime = microtime(true);
+
+        Log::info('Agent execution started', [
+            'agent' => $this->name(),
+            'method' => 'heuristic',
+            'linear_configured' => $this->client->isConfigured(),
+            'should_escalate' => $state->shouldEscalate,
+        ]);
+
         // Dry run si no tens API key configurada
         if (! $this->client->isConfigured()) {
-            $state->addTrace($this->name(), [
+            $output = [
                 'dryRun' => true,
                 'message' => 'LINEAR_API_KEY missing. Skipping ticket creation.',
+            ];
+
+            $state->addTrace($this->name(), $output);
+
+            $executionTime = (microtime(true) - $startTime) * 1000;
+
+            Log::info('Agent execution completed (dry run)', [
+                'agent' => $this->name(),
+                'method' => 'heuristic',
+                'execution_time_ms' => round($executionTime, 2),
+                'output' => $output,
             ]);
 
             return $state;
         }
 
         $payload = $this->mapper->mapStateToIssuePayload($state);
+
+        Log::info('Creating Linear issue', [
+            'agent' => $this->name(),
+            'payload' => $payload,
+        ]);
+
         $issue = $this->client->createIssue($payload);
 
         $state->linearIssueId = $issue['id'] ?? null;
         $state->linearIssueUrl = $issue['url'] ?? null;
 
-        $state->addTrace($this->name(), [
+        $executionTime = (microtime(true) - $startTime) * 1000;
+
+        $output = [
             'created' => (bool) $state->linearIssueId,
             'issue' => [
                 'id' => $state->linearIssueId,
@@ -45,6 +74,15 @@ class LinearWriterAgent implements AgentInterface
                 'identifier' => $issue['identifier'] ?? null,
             ],
             'error' => $issue['error'] ?? false,
+        ];
+
+        $state->addTrace($this->name(), $output);
+
+        Log::info('Agent execution completed', [
+            'agent' => $this->name(),
+            'method' => 'heuristic',
+            'execution_time_ms' => round($executionTime, 2),
+            'output' => $output,
         ]);
 
         return $state;

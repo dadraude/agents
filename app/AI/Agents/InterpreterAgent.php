@@ -4,6 +4,7 @@ namespace App\AI\Agents;
 
 use App\AI\Contracts\AgentInterface;
 use App\AI\Orchestrator\IncidentState;
+use Illuminate\Support\Facades\Log;
 
 class InterpreterAgent implements AgentInterface
 {
@@ -14,16 +15,36 @@ class InterpreterAgent implements AgentInterface
 
     public function handle(IncidentState $state): IncidentState
     {
+        $startTime = microtime(true);
         $text = trim($state->rawText);
+        $inputLength = mb_strlen($text);
+
+        Log::info('Agent execution started', [
+            'agent' => $this->name(),
+            'method' => 'heuristic',
+            'input_length' => $inputLength,
+            'input_preview' => mb_substr($text, 0, 200),
+        ]);
 
         $state->summary = mb_substr($text, 0, 160);
         $state->intent = $this->guessIntent($text);
         $state->entities = $this->extractEntities($text);
 
-        $state->addTrace($this->name(), [
+        $executionTime = (microtime(true) - $startTime) * 1000;
+
+        $output = [
             'summary' => $state->summary,
             'intent' => $state->intent,
             'entities' => $state->entities,
+        ];
+
+        $state->addTrace($this->name(), $output);
+
+        Log::info('Agent execution completed', [
+            'agent' => $this->name(),
+            'method' => 'heuristic',
+            'execution_time_ms' => round($executionTime, 2),
+            'output' => $output,
         ]);
 
         return $state;

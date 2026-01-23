@@ -4,6 +4,7 @@ namespace App\AI\Agents;
 
 use App\AI\Contracts\AgentInterface;
 use App\AI\Orchestrator\IncidentState;
+use Illuminate\Support\Facades\Log;
 
 class ClassifierAgent implements AgentInterface
 {
@@ -14,7 +15,16 @@ class ClassifierAgent implements AgentInterface
 
     public function handle(IncidentState $state): IncidentState
     {
+        $startTime = microtime(true);
         $t = mb_strtolower($state->rawText);
+        $inputLength = mb_strlen($state->rawText);
+
+        Log::info('Agent execution started', [
+            'agent' => $this->name(),
+            'method' => 'heuristic',
+            'input_length' => $inputLength,
+            'input_preview' => mb_substr($state->rawText, 0, 200),
+        ]);
 
         // type
         if (str_contains($t, 'error') || str_contains($t, 'falla') || str_contains($t, 'crash')) {
@@ -48,10 +58,21 @@ class ClassifierAgent implements AgentInterface
         // devRelated
         $state->devRelated = in_array($state->type, ['bug', 'feature'], true);
 
-        $state->addTrace($this->name(), [
+        $executionTime = (microtime(true) - $startTime) * 1000;
+
+        $output = [
             'type' => $state->type,
             'area' => $state->area,
             'devRelated' => $state->devRelated,
+        ];
+
+        $state->addTrace($this->name(), $output);
+
+        Log::info('Agent execution completed', [
+            'agent' => $this->name(),
+            'method' => 'heuristic',
+            'execution_time_ms' => round($executionTime, 2),
+            'output' => $output,
         ]);
 
         return $state;
