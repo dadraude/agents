@@ -26,7 +26,7 @@
   {
     "id": "TKT-002",
     "title": "KDS doesn't show orders. Intermittent error",
-    "description": "KDS doesn't show orders. Intermittent error. Sometimes it works, sometimes it doesn't. We haven't been able to identify the pattern.",
+    "description": "KDS doesn't show orders. Intermittent error. Sometimes it works, sometimes it doesn't. We haven't been able to identify the pattern. This happens on Android 11 with KDS app version 1.8.5. Steps to reproduce: 1) Open the KDS app on the Android tablet 2) Send several test orders from POS 3) Some orders do not appear on the KDS screen.",
     "status": "new",
     "severity": "medium",
     "priority": "high",
@@ -50,7 +50,7 @@
   {
     "id": "TKT-003",
     "title": "We can't charge with card. Connection error",
-    "description": "We can't charge with card. Connection error with the POS terminal. The problem started yesterday evening and continues today. We've tried restarting but it doesn't work.",
+    "description": "We can't charge with card. Connection error with the POS terminal. The problem started yesterday evening and continues today. We've tried restarting but it doesn't work. This happens on a Linux terminal TPV with POS app version 3.1.0. Steps to reproduce: 1) Open a table 2) Add items to the order 3) Choose card payment 4) The POS shows a connection error and the payment fails.",
     "status": "in_review",
     "severity": "critical",
     "priority": "urgent",
@@ -98,7 +98,7 @@
   {
     "id": "TKT-005",
     "title": "Backoffice doesn't load reports. Error 500",
-    "description": "Backoffice doesn't load reports. We get error 500 when trying to generate the sales report from last month. This has been happening for 2 days.",
+    "description": "Backoffice doesn't load reports. We get error 500 when trying to generate the sales report from last month. This has been happening for 2 days. This occurs on macOS 14.2 with the backoffice Web app version 3.2.1. Steps to reproduce: 1) Log in to backoffice 2) Go to Reports 3) Select last month's date range 4) Click Generate report 5) The page returns a 500 error.",
     "status": "new",
     "severity": "medium",
     "priority": "high",
@@ -170,7 +170,7 @@
   {
     "id": "TKT-008",
     "title": "POS doesn't print tickets. Printer not detected",
-    "description": "POS doesn't print tickets. The printer is not detected by the system. We've tried reconnecting it but it doesn't work. It's an Epson thermal printer.",
+    "description": "POS doesn't print tickets. The printer is not detected by the system. We've tried reconnecting it but it doesn't work. It's an Epson thermal printer. This happens on iOS 15.2 with POS app version 2.3.1. Steps to reproduce: 1) Open the POS on the iPad 2) Create a test order 3) Tap Print ticket 4) The printer is not detected and nothing is printed.",
     "status": "processed",
     "severity": "medium",
     "priority": "normal",
@@ -195,7 +195,7 @@
   {
     "id": "TKT-009",
     "title": "KDS screen freezes during rush hour",
-    "description": "The KDS screen freezes during rush hour. It happens every day around 8 PM. We have to restart the device multiple times.",
+    "description": "The KDS screen freezes during rush hour. It happens every day around 8 PM. We have to restart the device multiple times. This occurs on Android 12 with KDS app version 1.9.0. Steps to reproduce: 1) Use the KDS during peak hours 2) Receive many orders in a short period of time 3) The screen stops updating and the app freezes until we force close it.",
     "status": "new",
     "severity": "high",
     "priority": "high",
@@ -243,7 +243,7 @@
   {
     "id": "TKT-011",
     "title": "Backoffice export to PDF fails",
-    "description": "When trying to export reports to PDF, the system shows an error. CSV export works fine, but PDF doesn't.",
+    "description": "When trying to export reports to PDF, the system shows an error. CSV export works fine, but PDF doesn't. This happens on Windows 11 with backoffice Web version 3.2.1. Steps to reproduce: 1) Log in to backoffice 2) Open the reports section 3) Generate any report 4) Click Export as PDF 5) An error message appears and the PDF is not generated.",
     "status": "new",
     "severity": "low",
     "priority": "normal",
@@ -267,7 +267,7 @@
   {
     "id": "TKT-012",
     "title": "POS receipt printer prints blank pages",
-    "description": "The receipt printer prints blank pages randomly. It happens about 1 in 10 receipts. We've checked the paper and ink.",
+    "description": "The receipt printer prints blank pages randomly. It happens about 1 in 10 receipts. We've checked the paper and ink. This occurs on iOS 16.1 with POS app version 2.4.0. Steps to reproduce: 1) Open the POS on the iPad 2) Charge several test orders 3) Print receipts repeatedly 4) Approximately 1 out of every 10 receipts is printed as a blank page.",
     "status": "new",
     "severity": "medium",
     "priority": "normal",
@@ -291,7 +291,7 @@
   {
     "id": "TKT-013",
     "title": "KDS doesn't show allergen information",
-    "description": "The KDS screen doesn't display allergen information for dishes. This is a compliance issue and we need it fixed urgently.",
+    "description": "The KDS screen doesn't display allergen information for dishes. This is a compliance issue and we need it fixed urgently. This happens on Android 13 with KDS app version 1.9.2. Steps to reproduce: 1) Configure dishes with allergen information in backoffice 2) Send an order with those dishes to the KDS 3) The order appears on KDS but the allergen icons/text are missing.",
     "status": "new",
     "severity": "high",
     "priority": "urgent",
@@ -339,7 +339,7 @@
   {
     "id": "TKT-015",
     "title": "Backoffice user permissions not working",
-    "description": "We created a new user with limited permissions but they can still access all sections. The permission system seems broken.",
+    "description": "We created a new user with limited permissions but they can still access all sections. The permission system seems broken. This occurs on macOS 15.0 with backoffice Web version 3.3.0. Steps to reproduce: 1) Log in as admin 2) Create a new user with restricted permissions 3) Log in with that user 4) The user can still access sections that should be blocked.",
     "status": "new",
     "severity": "medium",
     "priority": "high",
@@ -363,7 +363,7 @@
   {
     "id": "TKT-016",
     "title": "POS card reader timeout error",
-    "description": "Card reader times out after 30 seconds. Customers have to try multiple times. This slows down service significantly.",
+    "description": "Card reader times out after 30 seconds. Customers have to try multiple times. This slows down service significantly. This happens on a Linux terminal TPV with POS app version 3.2.0. Steps to reproduce: 1) Open the POS 2) Start a card payment 3) Wait without removing the card 4) After around 30 seconds the POS shows a timeout error and cancels the payment.",
     "status": "new",
     "severity": "high",
     "priority": "urgent",
@@ -387,7 +387,7 @@
   {
     "id": "TKT-017",
     "title": "KDS order numbers are duplicated",
-    "description": "Sometimes the KDS shows the same order number twice. This confuses the kitchen staff. It happens randomly.",
+    "description": "Sometimes the KDS shows the same order number twice. This confuses the kitchen staff. It happens randomly. This happens on Android 11 with KDS app version 1.8.8. Steps to reproduce: 1) Send multiple orders quickly from POS 2) Watch the KDS screen 3) Occasionally the same order number appears twice in the list.",
     "status": "new",
     "severity": "medium",
     "priority": "normal",
@@ -435,7 +435,7 @@
   {
     "id": "TKT-019",
     "title": "Backoffice inventory sync delay",
-    "description": "Inventory updates take up to 2 hours to sync from POS to backoffice. This causes stock discrepancies.",
+    "description": "Inventory updates take up to 2 hours to sync from POS to backoffice. This causes stock discrepancies. This occurs on a Linux cloud environment with backoffice Web version 3.2.1. Steps to reproduce: 1) Sell items on POS 2) Immediately check inventory levels in backoffice 3) The quantities remain outdated for up to two hours before they update.",
     "status": "in_review",
     "severity": "medium",
     "priority": "high",
@@ -459,7 +459,7 @@
   {
     "id": "TKT-020",
     "title": "POS app crashes on iPad when switching users",
-    "description": "The POS app crashes when switching between user accounts on iPad. We have to restart the app every time.",
+    "description": "The POS app crashes when switching between user accounts on iPad. We have to restart the app every time. This happens on iOS 17.0 with POS app version 2.5.0. Steps to reproduce: 1) Open the POS app on the iPad 2) Log in with user A 3) Log out and log in with user B 4) The app crashes during the user switch and must be reopened.",
     "status": "new",
     "severity": "high",
     "priority": "high",
@@ -483,7 +483,7 @@
   {
     "id": "TKT-021",
     "title": "KDS doesn't update when order is modified",
-    "description": "When we modify an order from the POS, the KDS doesn't update. Kitchen staff prepare the wrong items.",
+    "description": "When we modify an order from the POS, the KDS doesn't update. Kitchen staff prepare the wrong items. This happens on Android 12 with KDS app version 1.9.1. Steps to reproduce: 1) Create an order in POS 2) Send it to the KDS 3) Modify the order in POS (add or remove items) 4) The changes are not reflected on the KDS screen.",
     "status": "new",
     "severity": "high",
     "priority": "urgent",
@@ -531,7 +531,7 @@
   {
     "id": "TKT-023",
     "title": "Backoffice dashboard loads very slowly",
-    "description": "The backoffice dashboard takes over 30 seconds to load. It's almost unusable. Other pages load fine.",
+    "description": "The backoffice dashboard takes over 30 seconds to load. It's almost unusable. Other pages load fine. This occurs on macOS 14.5 with backoffice Web version 3.2.1. Steps to reproduce: 1) Log in to backoffice 2) Open the dashboard 3) Wait for the widgets to load 4) The page stays loading for more than 30 seconds.",
     "status": "in_review",
     "severity": "medium",
     "priority": "high",
@@ -555,7 +555,7 @@
   {
     "id": "TKT-024",
     "title": "POS offline mode not working",
-    "description": "When internet connection is lost, POS should work in offline mode but it doesn't. We can't process any orders.",
+    "description": "When internet connection is lost, POS should work in offline mode but it doesn't. We can't process any orders. This happens on iOS 16.5 with POS app version 2.4.2. Steps to reproduce: 1) Disconnect the iPad from the internet 2) Open the POS 3) Try to create and close an order 4) The POS shows an error and does not allow processing the order offline.",
     "status": "new",
     "severity": "critical",
     "priority": "urgent",
@@ -675,7 +675,7 @@
   {
     "id": "TKT-029",
     "title": "KDS doesn't show preparation time estimates",
-    "description": "The KDS should show estimated preparation time for each dish but it's not displaying. This information is configured.",
+    "description": "The KDS should show estimated preparation time for each dish but it's not displaying. This information is configured. This happens on Android 11 with KDS app version 1.8.9. Steps to reproduce: 1) Configure preparation times for dishes in backoffice 2) Send orders with those dishes to the KDS 3) The orders appear without the estimated preparation time.",
     "status": "new",
     "severity": "low",
     "priority": "normal",
@@ -723,7 +723,7 @@
   {
     "id": "TKT-031",
     "title": "Backoffice reports missing data for last week",
-    "description": "The sales report for last week is missing data from Tuesday and Wednesday. Other days are fine.",
+    "description": "The sales report for last week is missing data from Tuesday and Wednesday. Other days are fine. This occurs on macOS 15.1 with backoffice Web version 3.3.0. Steps to reproduce: 1) Log in to backoffice 2) Go to sales reports 3) Select last week as the date range 4) Generate the report 5) Data for Tuesday and Wednesday is missing.",
     "status": "new",
     "severity": "medium",
     "priority": "high",
@@ -747,7 +747,7 @@
   {
     "id": "TKT-032",
     "title": "POS split payment feature not working",
-    "description": "When trying to split payment between card and cash, the POS crashes. Single payment methods work fine.",
+    "description": "When trying to split payment between card and cash, the POS crashes. Single payment methods work fine. This happens on iOS 17.2 with POS app version 2.5.1. Steps to reproduce: 1) Open the POS on the iPad 2) Create an order 3) Choose split payment between card and cash 4) Confirm the payment 5) The app crashes before finishing the operation.",
     "status": "new",
     "severity": "high",
     "priority": "high",
@@ -771,7 +771,7 @@
   {
     "id": "TKT-033",
     "title": "KDS order priority not respected",
-    "description": "Orders marked as high priority don't appear first on the KDS. The priority system seems broken.",
+    "description": "Orders marked as high priority don't appear first on the KDS. The priority system seems broken. This happens on Android 12 with KDS app version 1.9.1. Steps to reproduce: 1) In POS, create several orders and mark some as high priority 2) Send them to the KDS 3) On the KDS, high priority orders are not shown first in the list.",
     "status": "new",
     "severity": "medium",
     "priority": "normal",
@@ -843,7 +843,7 @@
   {
     "id": "TKT-036",
     "title": "POS can't process gift card payments",
-    "description": "When customers try to pay with gift cards, the POS shows an error. Gift cards are valid but system doesn't accept them.",
+    "description": "When customers try to pay with gift cards, the POS shows an error. Gift cards are valid but system doesn't accept them. This happens on iOS 16.8 with POS app version 2.4.3. Steps to reproduce: 1) Open the POS on the iPad 2) Start a payment using a valid gift card 3) Confirm the amount 4) The POS shows an error and refuses the payment.",
     "status": "new",
     "severity": "high",
     "priority": "high",
@@ -915,7 +915,7 @@
   {
     "id": "TKT-039",
     "title": "Backoffice can't import products from CSV",
-    "description": "When trying to import products from CSV file, the system shows an error. The CSV format matches the documentation.",
+    "description": "When trying to import products from CSV file, the system shows an error. The CSV format matches the documentation. This occurs on macOS 14.8 with backoffice Web version 3.3.0. Steps to reproduce: 1) Log in to backoffice 2) Go to the products import section 3) Upload a CSV file that follows the documented format 4) Click Import 5) The system shows an error and no products are created.",
     "status": "new",
     "severity": "medium",
     "priority": "normal",
@@ -939,7 +939,7 @@
   {
     "id": "TKT-040",
     "title": "POS receipt email not sent to customer",
-    "description": "Customers request email receipts but they're not being sent. Email addresses are correct and verified.",
+    "description": "Customers request email receipts but they're not being sent. Email addresses are correct and verified. This happens on iOS 17.1 with POS app version 2.5.2. Steps to reproduce: 1) Open the POS on the iPad 2) Close an order and choose to send the receipt by email 3) Enter a valid email address 4) The customer never receives the email receipt.",
     "status": "new",
     "severity": "low",
     "priority": "normal",
@@ -1035,7 +1035,7 @@
   {
     "id": "TKT-044",
     "title": "POS tip calculation is incorrect",
-    "description": "When calculating tips, the POS shows wrong amounts. It's not using the correct percentage.",
+    "description": "When calculating tips, the POS shows wrong amounts. It's not using the correct percentage. This happens on iOS 15.9 with POS app version 2.3.9. Steps to reproduce: 1) Open the POS 2) Create an order 3) At payment, select a tip percentage (for example 10%) 4) The system calculates a different amount than expected.",
     "status": "new",
     "severity": "high",
     "priority": "high",
@@ -1059,7 +1059,7 @@
   {
     "id": "TKT-045",
     "title": "KDS order completion doesn't sync with POS",
-    "description": "When kitchen marks an order as complete in KDS, it doesn't update in POS. Staff don't know when orders are ready.",
+    "description": "When kitchen marks an order as complete in KDS, it doesn't update in POS. Staff don't know when orders are ready. This happens on Android 12 with KDS app version 1.9.2. Steps to reproduce: 1) Send an order from POS to KDS 2) In KDS, mark the order as complete 3) In POS, the order remains as pending and does not show as completed.",
     "status": "new",
     "severity": "high",
     "priority": "urgent",
@@ -1131,7 +1131,7 @@
   {
     "id": "TKT-048",
     "title": "POS can't handle multiple discounts",
-    "description": "When applying multiple discounts (loyalty + promotion), the POS shows an error. Single discounts work fine.",
+    "description": "When applying multiple discounts (loyalty + promotion), the POS shows an error. Single discounts work fine. This happens on iOS 16.9 with POS app version 2.4.4. Steps to reproduce: 1) Open the POS on the iPad 2) Create an order 3) Apply a loyalty discount 4) Apply an additional promotion discount 5) The POS shows an error and the discounts are not applied correctly.",
     "status": "new",
     "severity": "medium",
     "priority": "normal",
@@ -1155,7 +1155,7 @@
   {
     "id": "TKT-049",
     "title": "KDS doesn't show dietary restrictions",
-    "description": "Dietary restrictions (gluten-free, vegan, etc.) configured in POS don't appear on KDS. This is a safety issue.",
+    "description": "Dietary restrictions (gluten-free, vegan, etc.) configured in POS don't appear on KDS. This is a safety issue. This happens on Android 13 with KDS app version 1.9.4. Steps to reproduce: 1) Configure dietary restrictions for dishes in POS 2) Send orders with those dishes to the KDS 3) On the KDS, the dietary restriction information is missing.",
     "status": "new",
     "severity": "critical",
     "priority": "urgent",

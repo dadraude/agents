@@ -63,7 +63,6 @@ class IncidentWorkflow
                 'missing_info' => $state->missingInfo,
             ]);
 
-            // Delay al final per poder veure el resultat
             $this->delay();
 
             return [
@@ -84,7 +83,7 @@ class IncidentWorkflow
         $state = $this->getAgent(DecisionMakerAgent::class, DecisionMakerNeuronAgent::class)->handle($state);
         $this->notifyProgress($progressCallback, 'DecisionMaker', 5, 6, 'completed');
 
-        // 6) Linear writer (si procedeix)
+        // 6) Linear writer
         if ($state->shouldEscalate) {
             $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'processing');
             Log::info('Workflow step: LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true']);
@@ -259,6 +258,11 @@ class IncidentWorkflow
 
     private function delay(): void
     {
+        // Avoid artificial delays when running automated tests
+        if (app()->runningUnitTests()) {
+            return;
+        }
+
         usleep(500000);
     }
 }
