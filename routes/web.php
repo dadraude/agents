@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SupportTicketController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,4 +16,9 @@ Route::prefix('support')->name('support.')->group(function () {
     Route::post('/{id}/create-linear', [SupportTicketController::class, 'createLinear'])->name('createLinear');
     Route::post('/process-batch', [SupportTicketController::class, 'processBatch'])->name('processBatch');
     Route::get('/{id}/agents', [SupportTicketController::class, 'agents'])->name('agents');
+});
+
+Route::prefix('settings')->name('settings.')->group(function () {
+    Route::get('/', [SettingsController::class, 'index'])->name('index');
+    Route::put('/', [SettingsController::class, 'update'])->name('update');
 });

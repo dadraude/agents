@@ -273,6 +273,11 @@
                         statusText.textContent = 'Completed';
                         statusText.className = 'text-xs text-green-600 dark:text-green-400';
                         agentItem.className = 'agent-item flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20';
+                    } else if (status === 'bypassed') {
+                        agentItem.querySelector('[data-icon="pending"]').classList.remove('hidden');
+                        statusText.textContent = 'Bypassed';
+                        statusText.className = 'text-xs text-yellow-600 dark:text-yellow-400';
+                        agentItem.className = 'agent-item flex items-center gap-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20';
                     } else if (status === 'skipped') {
                         agentItem.querySelector('[data-icon="pending"]').classList.remove('hidden');
                         statusText.textContent = 'Skipped';

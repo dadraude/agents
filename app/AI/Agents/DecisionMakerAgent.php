@@ -4,10 +4,13 @@ namespace App\AI\Agents;
 
 use App\AI\Contracts\AgentInterface;
 use App\AI\Orchestrator\IncidentState;
+use App\AI\Traits\ChecksBypass;
 use Illuminate\Support\Facades\Log;
 
 class DecisionMakerAgent implements AgentInterface
 {
+    use ChecksBypass;
+
     public function name(): string
     {
         return 'DecisionMaker';
@@ -15,6 +18,9 @@ class DecisionMakerAgent implements AgentInterface
 
     public function handle(IncidentState $state): IncidentState
     {
+        if ($this->shouldBypass()) {
+            return $state;
+        }
         $startTime = microtime(true);
         $inputLength = mb_strlen($state->rawText);
 

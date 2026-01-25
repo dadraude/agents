@@ -27,6 +27,9 @@
                         <a href="{{ route('support.index') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
                             List
                         </a>
+                        <a href="{{ route('settings.index') }}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+                            Settings
+                        </a>
                     </div>
                 </div>
             </div>

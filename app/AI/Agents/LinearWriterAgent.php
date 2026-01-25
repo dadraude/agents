@@ -4,12 +4,15 @@ namespace App\AI\Agents;
 
 use App\AI\Contracts\AgentInterface;
 use App\AI\Orchestrator\IncidentState;
+use App\AI\Traits\ChecksBypass;
 use App\Integrations\Linear\LinearClient;
 use App\Integrations\Linear\LinearMapper;
 use Illuminate\Support\Facades\Log;
 
 class LinearWriterAgent implements AgentInterface
 {
+    use ChecksBypass;
+
     public function __construct(
         private readonly LinearClient $client,
         private readonly LinearMapper $mapper,
@@ -22,6 +25,9 @@ class LinearWriterAgent implements AgentInterface
 
     public function handle(IncidentState $state): IncidentState
     {
+        if ($this->shouldBypass()) {
+            return $state;
+        }
         $startTime = microtime(true);
 
         Log::info('Agent execution started', [

@@ -5,6 +5,7 @@ namespace App\AI\Neuron;
 use App\AI\Config\NeuronConfig;
 use App\AI\Contracts\AgentInterface;
 use App\AI\Orchestrator\IncidentState;
+use App\AI\Traits\ChecksBypass;
 use Illuminate\Support\Facades\Log;
 use NeuronAI\Agent;
 use NeuronAI\Chat\Messages\UserMessage;
@@ -16,6 +17,8 @@ use NeuronAI\SystemPrompt;
 
 abstract class BaseNeuronAgent extends Agent implements AgentInterface
 {
+    use ChecksBypass;
+
     protected function provider(): AIProviderInterface
     {
         $providerName = NeuronConfig::getDefaultProvider();
@@ -74,6 +77,10 @@ abstract class BaseNeuronAgent extends Agent implements AgentInterface
 
     public function handle(IncidentState $state): IncidentState
     {
+        if ($this->shouldBypass()) {
+            return $state;
+        }
+
         // If LLM is not enabled or not configured, fallback to heuristic agent
         if (! NeuronConfig::shouldUseLLM() || ! NeuronConfig::isConfigured()) {
             Log::info('Agent falling back to heuristic (LLM not enabled or not configured)', [

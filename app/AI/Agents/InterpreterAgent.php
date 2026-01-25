@@ -4,10 +4,13 @@ namespace App\AI\Agents;
 
 use App\AI\Contracts\AgentInterface;
 use App\AI\Orchestrator\IncidentState;
+use App\AI\Traits\ChecksBypass;
 use Illuminate\Support\Facades\Log;
 
 class InterpreterAgent implements AgentInterface
 {
+    use ChecksBypass;
+
     public function name(): string
     {
         return 'Interpreter';
@@ -15,6 +18,9 @@ class InterpreterAgent implements AgentInterface
 
     public function handle(IncidentState $state): IncidentState
     {
+        if ($this->shouldBypass()) {
+            return $state;
+        }
         $startTime = microtime(true);
         $text = trim($state->rawText);
         $inputLength = mb_strlen($text);
