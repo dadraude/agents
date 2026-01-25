@@ -30,4 +30,29 @@ class UpdateSettingsRequest extends FormRequest
             'active_linear_writer' => ['sometimes', 'boolean'],
         ];
     }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $activeFields = [
+            'active_interpreter',
+            'active_classifier',
+            'active_validator',
+            'active_prioritizer',
+            'active_decision_maker',
+            'active_linear_writer',
+        ];
+
+        foreach ($activeFields as $field) {
+            if ($this->has($field)) {
+                $value = $this->input($field);
+                // Convert "1" or "0" strings to boolean
+                $this->merge([
+                    $field => $value === '1' || $value === 1 || $value === true || $value === 'true',
+                ]);
+            }
+        }
+    }
 }
