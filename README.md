@@ -1,59 +1,177 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Multi-Agent System for Intelligent Customer Experience Incident Management
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Multi-agent system that automates and structures the customer incident management flow, from receiving the message to automatically creating tickets in Linear when necessary.
 
-## About Laravel
+## 🎯 Description
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+This project implements a multi-agent system that processes Customer Experience (CX) incidents through six specialized agents that work in coordination:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Interpreter**: Analyzes customer text and extracts key information
+- **Classifier**: Classifies the incident by type and affected area
+- **Validator**: Evaluates if there is sufficient information to process
+- **Prioritizer**: Calculates priority based on impact, urgency, and severity
+- **Decision Maker**: Decides whether to escalate to development or manage from CX
+- **Linear Writer**: Automatically creates tickets in Linear when necessary
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🚀 Features
 
-## Learning Laravel
+- ✅ Automatic incident processing with multi-agent system
+- ✅ Complete web interface for ticket management
+- ✅ Linear integration for automatic issue creation
+- ✅ Support for multiple AI providers (Anthropic, OpenAI, Gemini, Mistral, Ollama)
+- ✅ Flexible configuration: use AI or predefined rules per agent
+- ✅ Real-time processing with visual feedback
+- ✅ Batch processing of multiple tickets
+- ✅ Complete traceability of all decisions made
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 📋 Requirements
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP 8.2 or higher
+- Composer
+- Node.js and NPM
+- Database (MySQL, PostgreSQL, SQLite)
+- (Optional) API keys for AI services
+- (Optional) Linear API key
 
-## Laravel Sponsors
+## 🔧 Installation
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd agents
+```
 
-### Premium Partners
+2. Install dependencies:
+```bash
+composer install
+npm install
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+3. Configure the environment:
+```bash
+cp .env.example .env
+php artisan key:generate
+```
 
-## Contributing
+4. Configure the database in `.env`:
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_database
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+5. Run migrations:
+```bash
+php artisan migrate
+```
 
-## Code of Conduct
+6. (Optional) Configure AI services in `.env`:
+```env
+NEURON_AI_USE_LLM=true
+NEURON_AI_DEFAULT_PROVIDER=anthropic
+NEURON_AI_PROVIDERS_ANTHROPIC_KEY=your_api_key
+NEURON_AI_PROVIDERS_ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+7. (Optional) Configure Linear in `.env`:
+```env
+LINEAR_API_KEY=your_api_key
+LINEAR_TEAM_ID=your_team_id
+```
 
-## Security Vulnerabilities
+8. Build assets:
+```bash
+npm run build
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+9. Start the server:
+```bash
+php artisan serve
+```
 
-## License
+## 🎮 Usage
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Accessing the application
+
+Once the server is started, access the URL shown by Laravel (default `http://localhost:8000`) in your browser.
+
+### Ticket management
+
+- **View tickets**: Navigate to `/support` to see the ticket list
+- **Process ticket**: Click on a ticket and select "Process" to run the multi-agent workflow
+- **Real-time processing**: Use the "Process with streaming" button to see progress in real-time
+- **Batch processing**: Select multiple tickets and process them all at once
+
+### Configuration
+
+Access `/settings` to configure:
+
+- Enable/disable individual agents
+- Choose between AI or predefined rules for each agent
+- Configure AI providers
+- Configure Linear integration
+
+## 🏗️ Architecture
+
+The system uses a multi-agent architecture where:
+
+- Each agent has a specific responsibility
+- Agents work sequentially, passing information between them
+- A central orchestrator coordinates the complete flow
+- The entire process is recorded for traceability
+
+## 🛠️ Technologies
+
+- **Laravel 12**: PHP web framework
+- **Neuron AI**: Language model integration
+- **Linear API**: Automatic ticket creation
+- **Tailwind CSS**: Interface styling
+- **Pest**: Testing framework
+
+## 📁 Project Structure
+
+```
+app/
+├── AI/
+│   ├── Agents/          # Agent implementations
+│   ├── Neuron/          # AI-powered agents
+│   ├── Orchestrator/     # Orchestrator and shared state
+│   └── Prompts/          # Prompts for AI agents
+├── Http/
+│   └── Controllers/      # Application controllers
+├── Integrations/
+│   └── Linear/          # Linear integration
+└── Models/              # Data models
+
+resources/
+└── views/               # Blade views
+
+routes/
+└── web.php              # Application routes
+```
+
+## 🧪 Testing
+
+Run tests:
+```bash
+php artisan test
+```
+
+## 📚 Documentation
+
+For more details about the project, see [PROJECTE.md](PROJECTE.md).
+
+## 📝 License
+
+This project is licensed under the MIT license.
+
+## 👤 Author
+
+**Eduard Altimiras Duocastella**
+
+---
+
+*Project developed as a Capstone final project.*
