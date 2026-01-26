@@ -172,6 +172,3 @@ This project is licensed under the MIT license.
 
 **Eduard Altimiras Duocastella**
 
----
-
-*Project developed as a Capstone final project.*
