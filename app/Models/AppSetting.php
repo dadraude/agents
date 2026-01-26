@@ -13,6 +13,12 @@ class AppSetting extends Model
         'active_prioritizer',
         'active_decision_maker',
         'active_linear_writer',
+        'use_llm_interpreter',
+        'use_llm_classifier',
+        'use_llm_validator',
+        'use_llm_prioritizer',
+        'use_llm_decision_maker',
+        'use_llm_linear_writer',
     ];
 
     protected $casts = [
@@ -22,6 +28,12 @@ class AppSetting extends Model
         'active_prioritizer' => 'boolean',
         'active_decision_maker' => 'boolean',
         'active_linear_writer' => 'boolean',
+        'use_llm_interpreter' => 'boolean',
+        'use_llm_classifier' => 'boolean',
+        'use_llm_validator' => 'boolean',
+        'use_llm_prioritizer' => 'boolean',
+        'use_llm_decision_maker' => 'boolean',
+        'use_llm_linear_writer' => 'boolean',
     ];
 
     /**
@@ -75,5 +87,38 @@ class AppSetting extends Model
         ];
 
         return $fieldMap[$agentName] ?? 'active_interpreter';
+    }
+
+    /**
+     * Check if an agent should use LLM.
+     * Returns null if not configured (should use global setting),
+     * true if agent-specific setting is true,
+     * false if agent-specific setting is false.
+     */
+    public function shouldUseLLMForAgent(string $agentName): ?bool
+    {
+        $fieldName = $this->getUseLLMFieldName($agentName);
+
+        return $this->$fieldName;
+    }
+
+    /**
+     * Get the use_llm field name for an agent.
+     */
+    private function getUseLLMFieldName(string $agentName): string
+    {
+        $agentName = strtolower($agentName);
+        $fieldMap = [
+            'interpreter' => 'use_llm_interpreter',
+            'classifier' => 'use_llm_classifier',
+            'validator' => 'use_llm_validator',
+            'prioritizer' => 'use_llm_prioritizer',
+            'decisionmaker' => 'use_llm_decision_maker',
+            'decision_maker' => 'use_llm_decision_maker',
+            'linearwriter' => 'use_llm_linear_writer',
+            'linear_writer' => 'use_llm_linear_writer',
+        ];
+
+        return $fieldMap[$agentName] ?? 'use_llm_interpreter';
     }
 }

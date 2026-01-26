@@ -2,11 +2,31 @@
 
 namespace App\AI\Config;
 
+use App\Models\AppSetting;
+
 class NeuronConfig
 {
     public static function shouldUseLLM(): bool
     {
         return config('neuron-ai.use_llm', false);
+    }
+
+    /**
+     * Check if an agent should use LLM.
+     * First checks agent-specific setting in database, then falls back to global config.
+     */
+    public static function shouldUseLLMForAgent(string $agentName): bool
+    {
+        $settings = AppSetting::get();
+        $agentSetting = $settings->shouldUseLLMForAgent($agentName);
+
+        // Si l'agent té configuració específica (no null), usar-la
+        if ($agentSetting !== null) {
+            return $agentSetting;
+        }
+
+        // Sinó, usar configuració global
+        return self::shouldUseLLM();
     }
 
     public static function getDefaultProvider(): string

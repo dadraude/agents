@@ -30,7 +30,11 @@ class SettingsController extends Controller
         $settings = AppSetting::get();
         $validated = $request->validated();
 
-        // Ensure all boolean fields are set with default false if not present
+        // Only update fields that were actually sent in the request
+        // This prevents overwriting fields that weren't included (e.g., when only updating LLM settings)
+        $updateData = [];
+
+        // Process active fields only if they were sent
         $activeFields = [
             'active_interpreter',
             'active_classifier',
@@ -41,12 +45,43 @@ class SettingsController extends Controller
         ];
 
         foreach ($activeFields as $field) {
-            if (! isset($validated[$field])) {
-                $validated[$field] = false;
+            if (isset($validated[$field])) {
+                $updateData[$field] = $validated[$field];
             }
         }
 
-        $settings->update($validated);
+        // Process use_llm fields - check both validated and raw input
+        // They can be null (global), true (LLM), or false (heuristic)
+        // Note: null values might not be in $validated due to 'sometimes' rule
+        $llmFields = [
+            'use_llm_interpreter',
+            'use_llm_classifier',
+            'use_llm_validator',
+            'use_llm_prioritizer',
+            'use_llm_decision_maker',
+            'use_llm_linear_writer',
+        ];
+
+        foreach ($llmFields as $field) {
+            // Check if field was sent in the request (even if null)
+            if ($request->has($field) || array_key_exists($field, $request->all())) {
+                // Get the processed value from the request (after prepareForValidation)
+                // This handles null values correctly
+                $value = $request->input($field);
+
+                // Convert empty string to null if needed (should already be null from prepareForValidation)
+                if ($value === '') {
+                    $value = null;
+                }
+
+                $updateData[$field] = $value;
+            }
+        }
+
+        // Only update if there's data to update
+        if (! empty($updateData)) {
+            $settings->update($updateData);
+        }
 
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json([
