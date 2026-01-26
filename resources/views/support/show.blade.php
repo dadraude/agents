@@ -190,6 +190,7 @@
             document.addEventListener('DOMContentLoaded', function() {
                 const processForm = document.getElementById('process-form');
                 const processButton = document.getElementById('process-button');
+                const agentsViewUrl = '{{ route("support.agents", $ticket->id) }}';
                 
                 if (processForm && processButton) {
                     processForm.addEventListener('submit', function(e) {
@@ -207,6 +208,10 @@
                     { name: 'DecisionMaker', step: 5 },
                     { name: 'LinearWriter', step: 6 },
                 ];
+
+                // Store agent statuses and decisions for confirmation summary
+                const agentsStatus = {};
+                const agentsDecisions = {};
 
                 function showLoadingOverlay() {
                     // Create overlay
@@ -254,7 +259,13 @@
                     processButton.classList.add('opacity-50', 'cursor-not-allowed');
                 }
 
-                function updateAgentStatus(agentName, status) {
+                function updateAgentStatus(agentName, status, decision = null) {
+                    // Store status and decision for confirmation summary
+                    agentsStatus[agentName] = status;
+                    if (decision) {
+                        agentsDecisions[agentName] = decision;
+                    }
+
                     const agentItem = document.querySelector(`[data-agent="${agentName}"]`);
                     if (!agentItem) return;
 
@@ -262,27 +273,50 @@
                     icons.forEach(icon => icon.classList.add('hidden'));
 
                     const statusText = agentItem.querySelector('.text-xs');
+                    const agentContent = agentItem.querySelector('.flex-1');
                     
                     if (status === 'processing') {
                         agentItem.querySelector('[data-icon="processing"]').classList.remove('hidden');
                         statusText.textContent = 'Processing...';
                         statusText.className = 'text-xs text-blue-600 dark:text-blue-400';
                         agentItem.className = 'agent-item flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20';
+                        // Remove decision if exists
+                        const decisionEl = agentItem.querySelector('.agent-decision');
+                        if (decisionEl) decisionEl.remove();
                     } else if (status === 'completed') {
                         agentItem.querySelector('[data-icon="completed"]').classList.remove('hidden');
                         statusText.textContent = 'Completed';
                         statusText.className = 'text-xs text-green-600 dark:text-green-400';
                         agentItem.className = 'agent-item flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20';
+                        
+                        // Add or update decision
+                        let decisionEl = agentItem.querySelector('.agent-decision');
+                        if (decision) {
+                            if (!decisionEl) {
+                                decisionEl = document.createElement('div');
+                                decisionEl.className = 'agent-decision text-xs text-gray-600 dark:text-gray-400 mt-1 italic';
+                                agentContent.appendChild(decisionEl);
+                            }
+                            decisionEl.textContent = decision;
+                        } else if (decisionEl) {
+                            decisionEl.remove();
+                        }
                     } else if (status === 'bypassed') {
                         agentItem.querySelector('[data-icon="pending"]').classList.remove('hidden');
                         statusText.textContent = 'Bypassed';
                         statusText.className = 'text-xs text-yellow-600 dark:text-yellow-400';
                         agentItem.className = 'agent-item flex items-center gap-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20';
+                        // Remove decision if exists
+                        const decisionEl = agentItem.querySelector('.agent-decision');
+                        if (decisionEl) decisionEl.remove();
                     } else if (status === 'skipped') {
                         agentItem.querySelector('[data-icon="pending"]').classList.remove('hidden');
                         statusText.textContent = 'Skipped';
                         statusText.className = 'text-xs text-gray-500 dark:text-gray-400';
                         agentItem.className = 'agent-item flex items-center gap-3 p-3 rounded-lg opacity-50';
+                        // Remove decision if exists
+                        const decisionEl = agentItem.querySelector('.agent-decision');
+                        if (decisionEl) decisionEl.remove();
                     }
                 }
 
@@ -337,11 +371,9 @@
                                             const parsed = JSON.parse(data);
                                             
                                             if (eventType === 'agent-progress') {
-                                                updateAgentStatus(parsed.agent, parsed.status);
+                                                updateAgentStatus(parsed.agent, parsed.status, parsed.decision || null);
                                             } else if (eventType === 'workflow-complete') {
-                                                setTimeout(() => {
-                                                    window.location.href = parsed.redirectUrl;
-                                                }, 1000);
+                                                showConfirmationSummary(parsed);
                                             } else if (eventType === 'workflow-error') {
                                                 showError(parsed.error || 'Unknown error occurred');
                                             }
@@ -364,6 +396,174 @@
                         console.error('Error connecting to stream:', error);
                         showError('Failed to connect to processing stream');
                     });
+                }
+
+                function getAgentDecision(agentName, state) {
+                    if (!state) return null;
+                    
+                    switch (agentName) {
+                        case 'Interpreter':
+                            if (state.intent) return `Intent: ${state.intent}`;
+                            if (state.summary) {
+                                const summary = state.summary.length > 50 ? state.summary.substring(0, 50) + '...' : state.summary;
+                                return summary;
+                            }
+                            return null;
+                        case 'Classifier':
+                            const parts = [];
+                            if (state.type) parts.push(state.type);
+                            if (state.area) parts.push(state.area.toUpperCase());
+                            return parts.length > 0 ? parts.join(' • ') : null;
+                        case 'Validator':
+                            if (state.isSufficient === false) {
+                                const missing = state.missingInfo && state.missingInfo.length > 0 
+                                    ? state.missingInfo.length + ' missing' 
+                                    : 'Insufficient';
+                                return `Missing info: ${missing}`;
+                            }
+                            return 'Sufficient info';
+                        case 'Prioritizer':
+                            if (state.priorityScore !== null && state.priorityScore !== undefined) {
+                                return `Priority: ${state.priorityScore.toFixed(1)}`;
+                            }
+                            if (state.severity) return `Severity: ${state.severity}/5`;
+                            return null;
+                        case 'DecisionMaker':
+                            if (state.decisionReason) {
+                                const reason = state.decisionReason.length > 60 ? state.decisionReason.substring(0, 60) + '...' : state.decisionReason;
+                                return reason;
+                            }
+                            if (state.shouldEscalate) return 'Escalate to agents';
+                            return 'Auto-process';
+                        case 'LinearWriter':
+                            if (state.linearIssueUrl) return 'Issue created';
+                            return 'No issue needed';
+                        default:
+                            return null;
+                    }
+                }
+
+                function showConfirmationSummary(workflowData) {
+                    const overlay = document.getElementById('loading-overlay');
+                    if (!overlay) return;
+
+                    const status = workflowData.status || 'unknown';
+                    const redirectUrl = workflowData.redirectUrl || agentsViewUrl;
+                    const state = workflowData.state || {};
+                    
+                    // Get status badge classes
+                    let statusBadgeClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                    let statusText = status;
+                    if (status === 'processed') {
+                        statusBadgeClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+                        statusText = 'Processed';
+                    } else if (status === 'escalated') {
+                        statusBadgeClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+                        statusText = 'Escalated';
+                    } else if (status === 'needs_more_info') {
+                        statusBadgeClass = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+                        statusText = 'Needs More Info';
+                    } else {
+                        statusText = status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
+                    }
+
+                    // Build agents list HTML
+                    const agentsList = agents.map(agent => {
+                        const agentStatus = agentsStatus[agent.name] || 'pending';
+                        // Use real-time decision if available, otherwise fallback to state
+                        const decision = agentsDecisions[agent.name] || getAgentDecision(agent.name, state);
+                        let iconHtml = '';
+                        let statusLabel = '';
+                        let itemClass = 'agent-item flex items-center gap-3 p-3 rounded-lg';
+                        
+                        if (agentStatus === 'completed') {
+                            iconHtml = '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                            statusLabel = 'Completed';
+                            itemClass += ' bg-green-50 dark:bg-green-900/20';
+                        } else if (agentStatus === 'bypassed') {
+                            iconHtml = '<svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>';
+                            statusLabel = 'Bypassed';
+                            itemClass += ' bg-yellow-50 dark:bg-yellow-900/20';
+                        } else if (agentStatus === 'skipped') {
+                            iconHtml = '<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>';
+                            statusLabel = 'Skipped';
+                            itemClass += ' opacity-50';
+                        } else {
+                            iconHtml = '<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>';
+                            statusLabel = 'Pending';
+                        }
+
+                        const decisionHtml = decision ? `
+                            <div class="text-xs text-gray-600 dark:text-gray-400 mt-1 italic">
+                                ${decision}
+                            </div>
+                        ` : '';
+
+                        return `
+                            <div class="${itemClass}">
+                                <div class="agent-icon w-6 h-6 flex items-center justify-center flex-shrink-0">
+                                    ${iconHtml}
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="text-sm font-medium text-gray-700 dark:text-gray-300">${agent.name}</div>
+                                        <div class="text-xs ${agentStatus === 'completed' ? 'text-green-600 dark:text-green-400' : agentStatus === 'bypassed' ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-500 dark:text-gray-400'} whitespace-nowrap">${statusLabel}</div>
+                                    </div>
+                                    ${decisionHtml}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    // Check if Linear issue was created (escalated status usually means Linear issue was created)
+                    const linearInfo = status === 'escalated' ? `
+                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <p class="text-sm text-blue-800 dark:text-blue-200">
+                                A Linear issue has been created for this ticket.
+                            </p>
+                        </div>
+                    ` : '';
+
+                    overlay.innerHTML = `
+                        <div class="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-xl max-w-lg w-full mx-4">
+                            <div class="flex flex-col gap-6">
+                                <div class="text-center">
+                                    <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4">
+                                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Processament completat</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Els agents AI han processat el ticket correctament.</p>
+                                    <span class="inline-block px-3 py-1 text-sm font-medium rounded-full ${statusBadgeClass}">
+                                        ${statusText}
+                                    </span>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Resum dels agents</h4>
+                                    <div class="space-y-2">
+                                        ${agentsList}
+                                    </div>
+                                </div>
+
+                                ${linearInfo}
+
+                                <div class="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                    <button onclick="window.location.href='${redirectUrl}'" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        Confirmar i veure resultats
+                                    </button>
+                                    <button onclick="document.getElementById('loading-overlay').remove(); document.getElementById('process-button').disabled = false; document.getElementById('process-button').classList.remove('opacity-50', 'cursor-not-allowed');" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors">
+                                        Tancar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 }
 
                 function showError(message) {

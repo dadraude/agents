@@ -223,12 +223,13 @@ class SupportTicketController extends Controller
                 $cacheKey = "workflow_result_{$id}";
                 Cache::put($cacheKey, $result, now()->addMinutes(10));
 
-                // Emit completion event
+                // Emit completion event with state for summary
                 yield new StreamedEvent(
                     event: 'workflow-complete',
                     data: json_encode([
                         'status' => $status,
                         'redirectUrl' => route('support.agents', $id),
+                        'state' => $state,
                     ])
                 );
             } catch (\Exception $e) {

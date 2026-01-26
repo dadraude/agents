@@ -53,7 +53,7 @@ class NeuronConfig
         }
 
         // Check if provider has required key
-        if (in_array($provider, ['anthropic', 'openai', 'gemini'], true)) {
+        if (in_array($provider, ['anthropic', 'openai', 'gemini', 'mistral'], true)) {
             return ! empty($config['key']);
         }
 

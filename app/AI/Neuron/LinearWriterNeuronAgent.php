@@ -54,11 +54,15 @@ class LinearWriterNeuronAgent extends BaseNeuronAgent
 
     protected function processWithLLM(IncidentState $state): IncidentState
     {
+        // Generate base payload first
+        $payload = $this->mapper->mapStateToIssuePayload($state);
+
         // Dry run si no tens API key configurada
         if (! $this->client->isConfigured()) {
             $this->addTrace($state, [
                 'dryRun' => true,
                 'message' => 'LINEAR_API_KEY missing. Skipping ticket creation.',
+                'payload' => $payload,
             ], false);
 
             return $state;
@@ -68,9 +72,6 @@ class LinearWriterNeuronAgent extends BaseNeuronAgent
         $userMessage = $this->buildUserMessage($state);
         $response = $this->chat($userMessage);
         $description = trim($response->getContent());
-
-        // Create Linear issue with improved description
-        $payload = $this->mapper->mapStateToIssuePayload($state);
 
         // Override description with LLM-generated one
         if (! empty($description)) {
@@ -91,6 +92,7 @@ class LinearWriterNeuronAgent extends BaseNeuronAgent
             ],
             'error' => $issue['error'] ?? false,
             'llm_description_used' => ! empty($description),
+            'payload' => $payload,
         ]);
 
         return $state;

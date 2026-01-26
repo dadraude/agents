@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | This option controls the default AI provider that will be used by
-    | Neuron AI. Supported providers: "anthropic", "openai", "ollama", "gemini"
+    | Neuron AI. Supported providers: "anthropic", "openai", "ollama", "gemini", "mistral"
     |
     */
 
@@ -43,6 +43,11 @@ return [
         'gemini' => [
             'key' => env('GEMINI_API_KEY'),
             'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        ],
+
+        'mistral' => [
+            'key' => env('MISTRAL_KEY'),
+            'model' => env('MISTRAL_MODEL', 'mistral-small-latest'),
         ],
     ],
 

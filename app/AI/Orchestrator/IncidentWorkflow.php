@@ -204,7 +204,8 @@ class IncidentWorkflow
             yield 'agent-progress' => ['agent' => 'Interpreter', 'step' => 1, 'totalSteps' => 6, 'status' => 'processing'];
             Log::info('Workflow step: Interpreter', ['step' => 1, 'total_steps' => 6]);
             $state = $this->getAgent(InterpreterAgent::class, InterpreterNeuronAgent::class)->handle($state);
-            yield 'agent-progress' => ['agent' => 'Interpreter', 'step' => 1, 'totalSteps' => 6, 'status' => 'completed'];
+            $decision = $this->getAgentDecisionSummary('Interpreter', $state);
+            yield 'agent-progress' => ['agent' => 'Interpreter', 'step' => 1, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
         }
 
         // 2) Classifier
@@ -215,7 +216,8 @@ class IncidentWorkflow
             yield 'agent-progress' => ['agent' => 'Classifier', 'step' => 2, 'totalSteps' => 6, 'status' => 'processing'];
             Log::info('Workflow step: Classifier', ['step' => 2, 'total_steps' => 6]);
             $state = $this->getAgent(ClassifierAgent::class, ClassifierNeuronAgent::class)->handle($state);
-            yield 'agent-progress' => ['agent' => 'Classifier', 'step' => 2, 'totalSteps' => 6, 'status' => 'completed'];
+            $decision = $this->getAgentDecisionSummary('Classifier', $state);
+            yield 'agent-progress' => ['agent' => 'Classifier', 'step' => 2, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
         }
 
         // 3) Validator
@@ -226,7 +228,8 @@ class IncidentWorkflow
             yield 'agent-progress' => ['agent' => 'Validator', 'step' => 3, 'totalSteps' => 6, 'status' => 'processing'];
             Log::info('Workflow step: Validator', ['step' => 3, 'total_steps' => 6]);
             $state = $this->getAgent(ValidatorAgent::class, ValidatorNeuronAgent::class)->handle($state);
-            yield 'agent-progress' => ['agent' => 'Validator', 'step' => 3, 'totalSteps' => 6, 'status' => 'completed'];
+            $decision = $this->getAgentDecisionSummary('Validator', $state);
+            yield 'agent-progress' => ['agent' => 'Validator', 'step' => 3, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
         }
 
         if (! $state->isSufficient) {
@@ -260,7 +263,8 @@ class IncidentWorkflow
             yield 'agent-progress' => ['agent' => 'Prioritizer', 'step' => 4, 'totalSteps' => 6, 'status' => 'processing'];
             Log::info('Workflow step: Prioritizer', ['step' => 4, 'total_steps' => 6]);
             $state = $this->getAgent(PrioritizerAgent::class, PrioritizerNeuronAgent::class)->handle($state);
-            yield 'agent-progress' => ['agent' => 'Prioritizer', 'step' => 4, 'totalSteps' => 6, 'status' => 'completed'];
+            $decision = $this->getAgentDecisionSummary('Prioritizer', $state);
+            yield 'agent-progress' => ['agent' => 'Prioritizer', 'step' => 4, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
         }
 
         // 5) Decision maker
@@ -271,7 +275,8 @@ class IncidentWorkflow
             yield 'agent-progress' => ['agent' => 'DecisionMaker', 'step' => 5, 'totalSteps' => 6, 'status' => 'processing'];
             Log::info('Workflow step: DecisionMaker', ['step' => 5, 'total_steps' => 6]);
             $state = $this->getAgent(DecisionMakerAgent::class, DecisionMakerNeuronAgent::class)->handle($state);
-            yield 'agent-progress' => ['agent' => 'DecisionMaker', 'step' => 5, 'totalSteps' => 6, 'status' => 'completed'];
+            $decision = $this->getAgentDecisionSummary('DecisionMaker', $state);
+            yield 'agent-progress' => ['agent' => 'DecisionMaker', 'step' => 5, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
         }
 
         // 6) Linear writer (si procedeix)
@@ -284,7 +289,8 @@ class IncidentWorkflow
                 yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'processing'];
                 Log::info('Workflow step: LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true']);
                 $state = $this->getAgent(LinearWriterAgent::class, LinearWriterNeuronAgent::class)->handle($state);
-                yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'completed'];
+                $decision = $this->getAgentDecisionSummary('LinearWriter', $state);
+                yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
                 $status = 'escalated';
             }
         } else {
@@ -312,6 +318,73 @@ class IncidentWorkflow
             'run_id' => $run?->id,
             'state' => $state->toArray(),
         ];
+    }
+
+    private function getAgentDecisionSummary(string $agentName, IncidentState $state): ?string
+    {
+        switch ($agentName) {
+            case 'Interpreter':
+                if ($state->intent) {
+                    return "Intent: {$state->intent}";
+                }
+                if ($state->summary) {
+                    $summary = mb_strlen($state->summary) > 50 ? mb_substr($state->summary, 0, 50).'...' : $state->summary;
+
+                    return $summary;
+                }
+
+                return null;
+            case 'Classifier':
+                $parts = [];
+                if ($state->type) {
+                    $parts[] = $state->type;
+                }
+                if ($state->area) {
+                    $parts[] = strtoupper($state->area);
+                }
+
+                return count($parts) > 0 ? implode(' • ', $parts) : null;
+            case 'Validator':
+                if ($state->isSufficient === false) {
+                    $missing = count($state->missingInfo) > 0
+                        ? count($state->missingInfo).' missing'
+                        : 'Insufficient';
+
+                    return "Missing info: {$missing}";
+                }
+
+                return 'Sufficient info';
+            case 'Prioritizer':
+                if ($state->priorityScore !== null) {
+                    return 'Priority: '.number_format($state->priorityScore, 1);
+                }
+                if ($state->severity) {
+                    return "Severity: {$state->severity}/5";
+                }
+
+                return null;
+            case 'DecisionMaker':
+                if ($state->decisionReason) {
+                    $reason = mb_strlen($state->decisionReason) > 60
+                        ? mb_substr($state->decisionReason, 0, 60).'...'
+                        : $state->decisionReason;
+
+                    return $reason;
+                }
+                if ($state->shouldEscalate) {
+                    return 'Escalate to agents';
+                }
+
+                return 'Auto-process';
+            case 'LinearWriter':
+                if ($state->linearIssueUrl) {
+                    return 'Issue created';
+                }
+
+                return 'No issue needed';
+            default:
+                return null;
+        }
     }
 
     private function notifyProgress(?callable $callback, string $agentName, int $step, int $totalSteps, string $status): void

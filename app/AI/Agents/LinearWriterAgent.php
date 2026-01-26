@@ -37,11 +37,15 @@ class LinearWriterAgent implements AgentInterface
             'should_escalate' => $state->shouldEscalate,
         ]);
 
+        // Generate payload always (for dry run display)
+        $payload = $this->mapper->mapStateToIssuePayload($state);
+
         // Dry run si no tens API key configurada
         if (! $this->client->isConfigured()) {
             $output = [
                 'dryRun' => true,
                 'message' => 'LINEAR_API_KEY missing. Skipping ticket creation.',
+                'payload' => $payload,
             ];
 
             $state->addTrace($this->name(), $output);
@@ -57,8 +61,6 @@ class LinearWriterAgent implements AgentInterface
 
             return $state;
         }
-
-        $payload = $this->mapper->mapStateToIssuePayload($state);
 
         Log::info('Creating Linear issue', [
             'agent' => $this->name(),
@@ -80,6 +82,7 @@ class LinearWriterAgent implements AgentInterface
                 'identifier' => $issue['identifier'] ?? null,
             ],
             'error' => $issue['error'] ?? false,
+            'payload' => $payload,
         ];
 
         $state->addTrace($this->name(), $output);

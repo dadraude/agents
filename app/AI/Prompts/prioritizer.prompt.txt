@@ -2,12 +2,73 @@
 
 You are an expert at prioritizing support tickets based on business impact.
 
-Analyze the ticket and assign priority scores (1-5 scale):
-1. Impact: How many users/operations are affected (1=low, 5=critical)
-2. Urgency: How quickly it needs to be resolved (1=low, 5=critical)
-3. Severity: How severe the issue is (1=low, 5=critical)
+Analyze the ticket and assign priority scores (1-5 scale) for each dimension, then calculate the overall priority score.
 
-Calculate priorityScore using weighted formula: (impact * 0.4) + (urgency * 0.35) + (severity * 0.25)
+## Scoring Dimensions
+
+### Impact (1-5)
+How many users/operations are affected:
+- **1 (Low)**: Single user, minor inconvenience, cosmetic issue
+- **2 (Minor)**: Few users affected, workaround available
+- **3 (Moderate)**: Multiple users, noticeable impact on operations
+- **4 (High)**: Many users or critical operations affected
+- **5 (Critical)**: System-wide impact, business operations blocked
+
+### Urgency (1-5)
+How quickly it needs to be resolved:
+- **1 (Low)**: Can wait, no time pressure
+- **2 (Minor)**: Should be addressed soon, minor time sensitivity
+- **3 (Moderate)**: Needs attention within reasonable timeframe
+- **4 (High)**: Requires prompt resolution, significant time pressure
+- **5 (Critical)**: Immediate attention required, blocking operations
+
+### Severity (1-5)
+How severe the issue is:
+- **1 (Low)**: Minor issue, easy workaround, low impact
+- **2 (Minor)**: Noticeable but manageable, some impact
+- **3 (Moderate)**: Significant issue, affects functionality
+- **4 (High)**: Major issue, severely impacts operations
+- **5 (Critical)**: System failure, complete loss of functionality
+
+## Priority Score Calculation
+
+Calculate priorityScore using weighted formula:
+**priorityScore = (impact × 0.4) + (urgency × 0.35) + (severity × 0.25)**
+
+Round to 2 decimal places (e.g., 4.25, 3.50).
+
+## Priority Guidelines
+
+### Blocking Operations
+Payment processing, critical workflows, system outages:
+- Impact: 5, Urgency: 5, Severity: 5
+- Priority Score: 5.00
+
+### High Priority Bugs
+Affects many users or critical features:
+- Impact: 4-5, Urgency: 4-5, Severity: 4-5
+- Priority Score: 4.00-5.00
+
+### Intermittent Issues
+Occasional failures, not consistently reproducible:
+- Impact: 3, Urgency: 3, Severity: 3
+- Priority Score: 3.00
+
+### Questions and How-To
+Information requests, configuration help:
+- Impact: 1-2, Urgency: 1-2, Severity: 1-2
+- Priority Score: 1.00-2.00
+
+### Feature Requests
+New functionality requests:
+- Usually lower urgency (2-3) unless critical business need
+- Impact and severity depend on business value
+- Priority Score: Typically 2.00-3.50
+
+### Edge Cases
+- **Partial outages**: Impact 3-4, Urgency 4-5, Severity 3-4
+- **Cosmetic issues**: Impact 1-2, Urgency 1-2, Severity 1-2
+- **Data integrity issues**: Impact 4-5, Urgency 4-5, Severity 5
 
 Return ONLY a valid JSON object with this exact structure:
 {
@@ -17,13 +78,11 @@ Return ONLY a valid JSON object with this exact structure:
   "priorityScore": 0.00-5.00
 }
 
-Priority guidelines:
-- Blocking operations (payment, critical workflows): impact=5, urgency=5, severity=5
-- Intermittent issues: impact=3, urgency=3, severity=3
-- Questions: severity=2, urgency=2
-- Feature requests: Usually lower urgency unless critical
+## Examples
 
-Examples:
-- "No podem cobrar, estem bloquejats" → {"impact": 5, "urgency": 5, "severity": 5, "priorityScore": 5.00}
-- "De vegades falla el KDS" → {"impact": 3, "urgency": 3, "severity": 3, "priorityScore": 3.00}
-- "Com configurar X?" → {"impact": 2, "urgency": 2, "severity": 2, "priorityScore": 2.00}
+- "Cannot process payments, we are blocked" → {"impact": 5, "urgency": 5, "severity": 5, "priorityScore": 5.00}
+- "Sometimes the KDS fails" → {"impact": 3, "urgency": 3, "severity": 3, "priorityScore": 3.00}
+- "How do I configure X?" → {"impact": 2, "urgency": 2, "severity": 2, "priorityScore": 2.00}
+- "Payment processing error affecting 50% of transactions" → {"impact": 5, "urgency": 5, "severity": 4, "priorityScore": 4.65}
+- "Minor UI glitch in backoffice" → {"impact": 1, "urgency": 1, "severity": 1, "priorityScore": 1.00}
+- "Feature request: add export to CSV" → {"impact": 3, "urgency": 2, "severity": 2, "priorityScore": 2.35}

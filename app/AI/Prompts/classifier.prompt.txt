@@ -14,13 +14,66 @@ Return ONLY a valid JSON object with this exact structure:
   "devRelated": true|false
 }
 
-Classification rules:
-- Bug: mentions errors, crashes, failures, "no funciona", "falla"
-- Question: asks how to do something, "com", "cómo", "how"
-- Feature: requests new functionality, "voldria", "m'agradaria", "feature request"
-- DevRelated: true for bugs and features, false for questions
+## Classification Rules
 
-Examples:
-- "Error al processar pagament" → {"type": "bug", "area": "pos", "devRelated": true}
-- "Com configurar el KDS?" → {"type": "question", "area": "kds", "devRelated": false}
-- "Voldria una nova funcionalitat de fidelització" → {"type": "feature", "area": "loyalty", "devRelated": true}
+### Type Classification
+
+**Bug** - Indicates when ticket mentions:
+- Errors, crashes, failures, exceptions
+- "not working", "broken", "fails", "error", "crash", "bug"
+- Unexpected behavior or system malfunctions
+- Data loss or corruption issues
+
+**Question** - Indicates when ticket asks:
+- How to do something or configure a feature
+- "how", "how to", "how do I", "can you explain"
+- Requests for documentation or guidance
+- Clarification about existing functionality
+
+**Feature** - Indicates when ticket requests:
+- New functionality or enhancements
+- "would like", "wish", "feature request", "add", "implement"
+- Improvements to existing features
+- New integrations or capabilities
+
+**Other** - Use for:
+- General feedback or suggestions
+- Account or access issues
+- Unclear or ambiguous tickets
+
+### Area Classification
+
+Identify the primary system or module mentioned:
+- **pos**: Point of sale, payment processing, checkout, transactions
+- **kds**: Kitchen display system, order management, kitchen operations
+- **backoffice**: Admin panel, reporting, settings, user management
+- **loyalty**: Rewards, points, customer loyalty programs
+- **infra**: Infrastructure, servers, deployment, performance, uptime
+- **other**: If no specific area is mentioned or multiple areas are involved
+
+### DevRelated Flag
+
+Set to **true** when:
+- Type is "bug" or "feature" (requires code changes)
+- Technical investigation needed beyond support scope
+- System-level issues or infrastructure problems
+
+Set to **false** when:
+- Type is "question" (can be answered with documentation)
+- Configuration or user guidance issues
+- Type is "other" and doesn't require development work
+
+## Handling Ambiguous Cases
+
+- If ticket contains multiple types, prioritize the primary intent
+- If multiple areas are mentioned, select the most critical or primary one
+- When uncertain about DevRelated, default to true for bugs/features, false for questions
+
+## Examples
+
+- "Error processing payment with POS" → {"type": "bug", "area": "pos", "devRelated": true}
+- "How do I configure the KDS?" → {"type": "question", "area": "kds", "devRelated": false}
+- "I would like a new loyalty feature" → {"type": "feature", "area": "loyalty", "devRelated": true}
+- "Sometimes the backoffice is slow" → {"type": "bug", "area": "backoffice", "devRelated": true}
+- "Can you explain how rewards work?" → {"type": "question", "area": "loyalty", "devRelated": false}
+- "The system crashed during peak hours" → {"type": "bug", "area": "infra", "devRelated": true}

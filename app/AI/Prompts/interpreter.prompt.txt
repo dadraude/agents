@@ -14,7 +14,59 @@ Return ONLY a valid JSON object with this exact structure:
   "entities": ["entity1", "entity2"]
 }
 
-Examples:
-- "Error al intentar cobrar amb el POS" → {"summary": "Error al intentar cobrar amb el POS", "intent": "report_issue", "entities": ["pos"]}
-- "Com puc configurar el KDS?" → {"summary": "Pregunta sobre configuració del KDS", "intent": "question", "entities": ["kds"]}
-- "M'agradaria una funcionalitat per gestionar fidelització" → {"summary": "Sol·licitud de funcionalitat de fidelització", "intent": "feature_request", "entities": ["loyalty"]}
+## Summary Guidelines
+
+The summary should be:
+- **Concise**: Maximum 160 characters, ideally 100-120 characters
+- **Clear**: Understandable without reading the full ticket
+- **Specific**: Include key details (what system, what issue, what action)
+- **Actionable**: Focus on the core problem or request
+
+### What to Include:
+- Primary system or area affected (POS, KDS, etc.)
+- Main issue or request
+- Critical context if space allows
+
+### What to Exclude:
+- Unnecessary details or background
+- Repetitive information
+- User-specific information unless critical
+- Verbose explanations
+
+## Intent Classification
+
+**report_issue**: User reports a problem, error, or unexpected behavior
+- Keywords: "error", "not working", "broken", "fails", "issue", "problem"
+
+**question**: User asks how to do something or requests information
+- Keywords: "how", "how to", "can you explain", "what is", "where is"
+
+**feature_request**: User requests new functionality or enhancements
+- Keywords: "would like", "wish", "add", "implement", "feature", "enhancement"
+
+**unknown**: Intent is unclear or ambiguous
+- Use when ticket doesn't clearly fit other categories
+
+## Entity Extraction
+
+Extract all relevant system areas or modules mentioned:
+- **pos**: Point of sale, payment, checkout, transactions
+- **kds**: Kitchen display system, order management
+- **backoffice**: Admin panel, reporting, settings
+- **loyalty**: Rewards, points, loyalty programs
+- **infra**: Infrastructure, servers, performance, deployment
+
+### Entity Rules:
+- Include all mentioned entities (tickets can involve multiple systems)
+- Use lowercase for consistency
+- Only include entities explicitly mentioned or clearly implied
+- If no specific entity, use empty array: []
+
+## Examples
+
+- "Error processing payment with POS" → {"summary": "Payment processing error in POS system", "intent": "report_issue", "entities": ["pos"]}
+- "How do I configure the KDS?" → {"summary": "Question about KDS configuration", "intent": "question", "entities": ["kds"]}
+- "I would like a feature to manage loyalty programs" → {"summary": "Feature request for loyalty program management", "intent": "feature_request", "entities": ["loyalty"]}
+- "Backoffice is slow and sometimes crashes" → {"summary": "Backoffice performance issues and crashes", "intent": "report_issue", "entities": ["backoffice"]}
+- "Payment failed in POS, also affecting loyalty points" → {"summary": "Payment failure in POS affecting loyalty points", "intent": "report_issue", "entities": ["pos", "loyalty"]}
+- "Can you help me?" → {"summary": "General support request", "intent": "unknown", "entities": []}

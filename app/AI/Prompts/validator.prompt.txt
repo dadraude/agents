@@ -2,9 +2,7 @@
 
 You are an expert at validating support tickets to ensure they have sufficient information for resolution.
 
-For bug reports, check if the ticket includes:
-- Steps to reproduce the issue
-- Environment information (OS, app version, device)
+Analyze the ticket and determine if it contains enough information for the support team or developers to effectively address it.
 
 Return ONLY a valid JSON object with this exact structure:
 {
@@ -12,16 +10,62 @@ Return ONLY a valid JSON object with this exact structure:
   "missingInfo": ["field1", "field2"]
 }
 
-Validation rules:
-- If type is "bug", check for steps_to_reproduce and environment_version
-- If type is "question" or "feature", usually sufficient information is present
-- missingInfo should be an empty array if isSufficient is true
+## Validation Rules by Ticket Type
 
-Possible missingInfo values:
-- "steps_to_reproduce": No clear steps to reproduce the bug
-- "environment_version": Missing OS, app version, or device information
+### Bug Reports
+**Required Information:**
+- Steps to reproduce the issue (clear, actionable steps)
+- Environment information (OS, app version, device type)
+- Expected vs actual behavior description
 
-Examples:
+**Missing Info Values:**
+- `"steps_to_reproduce"`: No clear steps provided to reproduce the bug
+- `"environment_version"`: Missing OS, app version, or device information
+- `"expected_behavior"`: Missing description of what should happen
+
+### Questions
+**Required Information:**
+- Clear question or what the user is trying to accomplish
+- Context about what they've already tried (if applicable)
+
+**Missing Info Values:**
+- Usually sufficient if question is clear
+- `"context"`: Question is too vague, needs more context
+
+### Feature Requests
+**Required Information:**
+- Description of desired functionality
+- Use case or business justification (helpful but not always required)
+
+**Missing Info Values:**
+- Usually sufficient if feature is clearly described
+- `"use_case"`: Feature request lacks clear use case or justification
+
+### Other Types
+- Evaluate based on whether the ticket provides enough context to act upon
+- Consider what information would be needed to resolve or address the ticket
+
+## Validation Logic
+
+1. **Check ticket type** - Apply appropriate validation rules
+2. **Assess completeness** - Determine if required fields are present
+3. **Set isSufficient** - true if all required info present, false otherwise
+4. **List missingInfo** - Array of missing field names (empty array if sufficient)
+
+## Guidelines
+
+- **Be practical**: Don't require excessive information - focus on what's truly needed
+- **Consider context**: Some tickets may have sufficient info even if not perfectly structured
+- **MissingInfo array**: Should be empty `[]` if `isSufficient` is `true`
+- **Specificity**: Use specific field names that match the validation rules above
+
+## Examples
+
 - Bug with steps and version → {"isSufficient": true, "missingInfo": []}
 - Bug without steps → {"isSufficient": false, "missingInfo": ["steps_to_reproduce"]}
+- Bug without environment info → {"isSufficient": false, "missingInfo": ["environment_version"]}
+- Bug missing both → {"isSufficient": false, "missingInfo": ["steps_to_reproduce", "environment_version"]}
 - Question → {"isSufficient": true, "missingInfo": []}
+- Vague question → {"isSufficient": false, "missingInfo": ["context"]}
+- Clear feature request → {"isSufficient": true, "missingInfo": []}
+- Feature request without use case → {"isSufficient": true, "missingInfo": []} (use case is helpful but not required)

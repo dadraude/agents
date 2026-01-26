@@ -12,6 +12,7 @@ use NeuronAI\Chat\Messages\UserMessage;
 use NeuronAI\Providers\AIProviderInterface;
 use NeuronAI\Providers\Anthropic\Anthropic;
 use NeuronAI\Providers\Gemini\Gemini;
+use NeuronAI\Providers\Mistral\Mistral;
 use NeuronAI\Providers\OpenAI\OpenAI;
 use NeuronAI\SystemPrompt;
 
@@ -37,6 +38,10 @@ abstract class BaseNeuronAgent extends Agent implements AgentInterface
             'gemini' => new Gemini(
                 key: $key ?? '',
                 model: $model ?? 'gemini-2.5-flash',
+            ),
+            'mistral' => new Mistral(
+                key: $key ?? '',
+                model: $model ?? 'mistral-small-latest',
             ),
             default => throw new \RuntimeException("Unsupported provider: {$providerName}"),
         };

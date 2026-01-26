@@ -10,14 +10,32 @@ Return ONLY a valid JSON object with this exact structure:
   "decisionReason": "Clear explanation of the decision"
 }
 
-Escalation rules:
-- Escalate if: bug/feature with priorityScore >= 4.0
-- Escalate if: mentions "blocked", "bloquejat", "no podem cobrar" (operational blocking)
-- Do not escalate: questions, low priority issues, or already resolved items
+## Escalation Rules
 
-The decisionReason should be clear and explainable for audit purposes.
+### Escalate if:
+- Bug or feature request with priorityScore >= 4.0
+- Mentions operational blocking keywords: "blocked", "cannot process", "payment failed", "system down", "critical error"
+- Affects multiple users or critical business operations
+- Requires code changes or technical investigation beyond support scope
 
-Examples:
-- High priority bug → {"shouldEscalate": true, "decisionReason": "High priority bug (score 4.5) requires developer intervention"}
-- Question → {"shouldEscalate": false, "decisionReason": "Question can be answered by support team"}
-- Blocking payment → {"shouldEscalate": true, "decisionReason": "User is blocked from processing payments, critical operational issue"}
+### Do not escalate if:
+- Question or how-to request (can be answered by support team)
+- Low priority issues (priorityScore < 4.0) that are not blocking operations
+- Already resolved items or duplicate tickets
+- Configuration or user error issues that can be resolved with guidance
+
+## Decision Reason Guidelines
+
+The decisionReason should be:
+- Clear and specific (explain why escalation is or isn't needed)
+- Reference specific criteria (priority score, blocking status, etc.)
+- Suitable for audit purposes and stakeholder review
+- Concise but informative (2-3 sentences maximum)
+
+## Examples
+
+- High priority bug → {"shouldEscalate": true, "decisionReason": "High priority bug (score 4.5) requires developer intervention. Issue affects payment processing and blocks critical business operations."}
+- Question → {"shouldEscalate": false, "decisionReason": "Question can be answered by support team. No code changes or technical investigation required."}
+- Blocking payment → {"shouldEscalate": true, "decisionReason": "User is blocked from processing payments. This is a critical operational issue affecting revenue and requires immediate developer attention."}
+- Low priority feature → {"shouldEscalate": false, "decisionReason": "Feature request has low priority score (2.5). Can be handled through product planning process, not immediate escalation."}
+- Intermittent issue → {"shouldEscalate": true, "decisionReason": "Intermittent bug with priority score 4.2 requires technical investigation. Pattern suggests underlying code issue that needs developer analysis."}

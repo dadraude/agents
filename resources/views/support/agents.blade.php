@@ -22,6 +22,50 @@
         </div>
     @else
         <div class="space-y-6">
+            <!-- Ticket Escalated Alert - At the top -->
+            @if(isset($workflowResult['state']['shouldEscalate']) && $workflowResult['state']['shouldEscalate'])
+                @php
+                    $type = $workflowResult['state']['type'] ?? null;
+                    $area = $workflowResult['state']['area'] ?? null;
+                    $priorityScore = $workflowResult['state']['priorityScore'] ?? null;
+                    $decisionReason = $workflowResult['state']['decisionReason'] ?? null;
+                    
+                    // Build the message similar to the image description
+                    $message = '';
+                    if ($type && $priorityScore !== null) {
+                        $typeLabel = ucfirst($type);
+                        $priorityLabel = $priorityScore >= 4.0 ? 'High priority' : 'Priority';
+                        $message = "{$priorityLabel} {$typeLabel} (score {$priorityScore})";
+                        
+                        if ($area) {
+                            $areaLabel = strtoupper($area);
+                            $message .= " related to {$areaLabel}";
+                        }
+                        
+                        if ($decisionReason && $decisionReason !== 'The ticket has been escalated to agents.') {
+                            $message .= ", {$decisionReason}";
+                        } else {
+                            $message .= ", requires developer intervention for investigation and fix.";
+                        }
+                    } else {
+                        $message = $decisionReason ?? 'The ticket has been escalated to agents.';
+                    }
+                @endphp
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                    <h3 class="text-base font-semibold text-blue-900 dark:text-blue-200 mb-2">Ticket Escalated</h3>
+                    <p class="text-sm text-blue-800 dark:text-blue-300">
+                        {{ $message }}
+                    </p>
+                    @if(isset($workflowResult['state']['linearIssueUrl']))
+                        <a href="{{ $workflowResult['state']['linearIssueUrl'] }}" target="_blank" class="mt-3 inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                            View issue in Linear
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                        </a>
+                    @endif
+                </div>
+            @endif
             <!-- Processing Summary -->
             <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Processing Summary</h2>
@@ -149,23 +193,6 @@
             </div>
 
             <!-- Decisions and Results -->
-            @if(isset($workflowResult['state']['shouldEscalate']) && $workflowResult['state']['shouldEscalate'])
-                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-                    <h3 class="text-base font-semibold text-blue-900 dark:text-blue-200 mb-2">Ticket Escalated</h3>
-                    <p class="text-sm text-blue-800 dark:text-blue-300">
-                        {{ $workflowResult['state']['decisionReason'] ?? 'The ticket has been escalated to agents.' }}
-                    </p>
-                    @if(isset($workflowResult['state']['linearIssueUrl']))
-                        <a href="{{ $workflowResult['state']['linearIssueUrl'] }}" target="_blank" class="mt-3 inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                            View issue in Linear
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                            </svg>
-                        </a>
-                    @endif
-                </div>
-            @endif
-
             @if(isset($workflowResult['state']['isSufficient']) && !$workflowResult['state']['isSufficient'])
                 <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6">
                     <h3 class="text-base font-semibold text-yellow-900 dark:text-yellow-200 mb-2">Insufficient Information</h3>
