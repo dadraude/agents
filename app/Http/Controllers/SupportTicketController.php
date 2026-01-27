@@ -87,7 +87,7 @@ class SupportTicketController extends Controller
 
     public function show(string $id): \Illuminate\Contracts\View\View|\Illuminate\Http\RedirectResponse
     {
-        $ticket = SupportTicket::find($id);
+        $ticket = SupportTicket::with('incidentRuns')->find($id);
 
         if (! $ticket) {
             return redirect()->route('support.index')
@@ -122,9 +122,11 @@ class SupportTicketController extends Controller
             $status = $result['status'] ?? null;
             $state = $result['state'] ?? [];
 
-            if ($status === 'processed') {
+            if ($status === 'escalated') {
+                // Escalated to development - development will track it
                 $ticket->status = 'processed';
-            } elseif ($status === 'escalated') {
+            } elseif ($status === 'processed') {
+                // Processed but not escalated - needs manual review
                 $ticket->status = 'in_review';
             } elseif ($status === 'needs_more_info') {
                 $ticket->status = 'in_review';
@@ -193,9 +195,11 @@ class SupportTicketController extends Controller
                 $status = $result['status'] ?? null;
                 $state = $result['state'] ?? [];
 
-                if ($status === 'processed') {
+                if ($status === 'escalated') {
+                    // Escalated to development - development will track it
                     $ticket->status = 'processed';
-                } elseif ($status === 'escalated') {
+                } elseif ($status === 'processed') {
+                    // Processed but not escalated - needs manual review
                     $ticket->status = 'in_review';
                 } elseif ($status === 'needs_more_info') {
                     $ticket->status = 'in_review';
@@ -261,6 +265,28 @@ class SupportTicketController extends Controller
             Cache::forget($cacheKey);
         }
 
+        // If no result in cache/session, try to get from IncidentRun
+        if (! $workflowResult) {
+            $latestRun = $ticket->incidentRuns()->latest()->first();
+
+            if ($latestRun && $latestRun->state_json) {
+                // Build state array from IncidentRun data
+                $state = $latestRun->state_json ?? [];
+
+                // Add trace if available (trace is stored separately in trace_json)
+                if ($latestRun->trace_json && is_array($latestRun->trace_json)) {
+                    $state['trace'] = $latestRun->trace_json;
+                }
+
+                // Build workflow result from IncidentRun data
+                $workflowResult = [
+                    'status' => $latestRun->status ?? 'processed',
+                    'state' => $state,
+                    'run_id' => $latestRun->id,
+                ];
+            }
+        }
+
         return view('support.agents', [
             'ticket' => $ticket,
             'workflowResult' => $workflowResult,
@@ -269,7 +295,33 @@ class SupportTicketController extends Controller
 
     public function processBatch(Request $request, IncidentWorkflow $workflow): \Illuminate\Http\RedirectResponse
     {
+        // Get all ticket_ids from request - Laravel automatically handles array notation
         $ticketIds = $request->input('ticket_ids', []);
+
+        // Debug: log what we received (remove after debugging)
+        \Log::info('processBatch received ticket_ids', [
+            'raw' => $request->all(),
+            'ticket_ids_raw' => $ticketIds,
+            'is_array' => is_array($ticketIds),
+        ]);
+
+        // Normalize to array - handle case where single checkbox is sent as string
+        if (! is_array($ticketIds)) {
+            $ticketIds = $ticketIds ? [$ticketIds] : [];
+        }
+
+        // Filter out empty values, null, and convert to strings/ints, then reindex array
+        $ticketIds = array_values(
+            array_filter(
+                array_map(fn ($id) => is_numeric($id) ? (int) $id : (string) $id, $ticketIds),
+                fn ($id) => ! empty($id) && $id !== null && $id !== ''
+            )
+        );
+
+        \Log::info('processBatch processed ticket_ids', [
+            'processed' => $ticketIds,
+            'count' => count($ticketIds),
+        ]);
 
         if (empty($ticketIds)) {
             return redirect()->route('support.index')
@@ -301,9 +353,11 @@ class SupportTicketController extends Controller
                 $status = $result['status'] ?? null;
                 $state = $result['state'] ?? [];
 
-                if ($status === 'processed') {
+                if ($status === 'escalated') {
+                    // Escalated to development - development will track it
                     $ticket->status = 'processed';
-                } elseif ($status === 'escalated') {
+                } elseif ($status === 'processed') {
+                    // Processed but not escalated - needs manual review
                     $ticket->status = 'in_review';
                 } elseif ($status === 'needs_more_info') {
                     $ticket->status = 'in_review';
@@ -348,6 +402,170 @@ class SupportTicketController extends Controller
             ->with($errors ? 'error' : 'success', $message);
     }
 
+    public function processBatchStream(Request $request, IncidentWorkflow $workflow)
+    {
+        // Get all ticket_ids from request
+        $ticketIds = $request->input('ticket_ids', []);
+
+        // Normalize to array
+        if (! is_array($ticketIds)) {
+            $ticketIds = $ticketIds ? [$ticketIds] : [];
+        }
+
+        // Filter out empty values
+        $ticketIds = array_values(
+            array_filter(
+                array_map(fn ($id) => is_numeric($id) ? (int) $id : (string) $id, $ticketIds),
+                fn ($id) => ! empty($id) && $id !== null && $id !== ''
+            )
+        );
+
+        if (empty($ticketIds)) {
+            return response()->json(['error' => 'No tickets selected'], 400);
+        }
+
+        $tickets = SupportTicket::whereIn('id', $ticketIds)->get();
+
+        if ($tickets->isEmpty()) {
+            return response()->json(['error' => 'No valid tickets found'], 404);
+        }
+
+        return response()->eventStream(function () use ($workflow, $tickets) {
+            $totalTickets = $tickets->count();
+            $processedCount = 0;
+            $errors = [];
+
+            // Emit initial event with ticket list
+            yield new StreamedEvent(
+                event: 'batch-start',
+                data: json_encode([
+                    'totalTickets' => $totalTickets,
+                    'ticketIds' => $tickets->pluck('id')->toArray(),
+                ])
+            );
+
+            foreach ($tickets as $ticket) {
+                $text = $ticket->description ?? $ticket->title ?? '';
+
+                if (trim($text) === '') {
+                    $errors[] = "Ticket {$ticket->id} has no valid description";
+                    yield new StreamedEvent(
+                        event: 'ticket-error',
+                        data: json_encode([
+                            'ticketId' => $ticket->id,
+                            'error' => 'Ticket has no valid description',
+                        ])
+                    );
+
+                    continue;
+                }
+
+                try {
+                    // Emit ticket start event
+                    yield new StreamedEvent(
+                        event: 'ticket-start',
+                        data: json_encode([
+                            'ticketId' => $ticket->id,
+                            'ticketTitle' => $ticket->title ?? 'No title',
+                        ])
+                    );
+
+                    $result = null;
+
+                    // Process ticket with streaming
+                    foreach ($workflow->runStreaming($text) as $eventType => $eventData) {
+                        if ($eventType === 'agent-progress') {
+                            // Emit agent progress for this specific ticket
+                            yield new StreamedEvent(
+                                event: 'ticket-agent-progress',
+                                data: json_encode([
+                                    'ticketId' => $ticket->id,
+                                    'agent' => $eventData['agent'],
+                                    'step' => $eventData['step'],
+                                    'totalSteps' => $eventData['totalSteps'],
+                                    'status' => $eventData['status'],
+                                    'decision' => $eventData['decision'] ?? null,
+                                ])
+                            );
+                        } elseif ($eventType === 'workflow-result') {
+                            $result = $eventData;
+                        }
+                    }
+
+                    if (! $result) {
+                        throw new \RuntimeException('Workflow did not return a result');
+                    }
+
+                    // Update ticket status
+                    $status = $result['status'] ?? null;
+                    $state = $result['state'] ?? [];
+
+                    if ($status === 'escalated') {
+                        $ticket->status = 'processed';
+                    } elseif ($status === 'processed') {
+                        $ticket->status = 'in_review';
+                    } elseif ($status === 'needs_more_info') {
+                        $ticket->status = 'in_review';
+                    }
+
+                    // Save Linear URL if exists
+                    if (isset($state['linearIssueUrl']) && ! empty($state['linearIssueUrl'])) {
+                        $ticket->linear_issue_url = $state['linearIssueUrl'];
+                        $ticket->linear_issue_id = $state['linearIssueId'] ?? null;
+                    }
+
+                    $ticket->save();
+
+                    // Relate IncidentRun to ticket if created
+                    if (isset($result['run_id']) && $result['run_id']) {
+                        $incidentRun = \App\Models\IncidentRun::find($result['run_id']);
+                        if ($incidentRun) {
+                            $incidentRun->support_ticket_id = $ticket->id;
+                            $incidentRun->save();
+                        }
+                    }
+
+                    // Store workflow result in cache for the agents view
+                    $cacheKey = "workflow_result_{$ticket->id}";
+                    Cache::put($cacheKey, $result, now()->addMinutes(10));
+
+                    $processedCount++;
+
+                    // Emit ticket completion event
+                    yield new StreamedEvent(
+                        event: 'ticket-complete',
+                        data: json_encode([
+                            'ticketId' => $ticket->id,
+                            'status' => $status,
+                            'processedCount' => $processedCount,
+                            'totalTickets' => $totalTickets,
+                        ])
+                    );
+                } catch (\Exception $e) {
+                    $errors[] = "Error processing ticket {$ticket->id}: ".$e->getMessage();
+                    yield new StreamedEvent(
+                        event: 'ticket-error',
+                        data: json_encode([
+                            'ticketId' => $ticket->id,
+                            'error' => $e->getMessage(),
+                        ])
+                    );
+                }
+            }
+
+            // Emit batch completion event
+            yield new StreamedEvent(
+                event: 'batch-complete',
+                data: json_encode([
+                    'processedCount' => $processedCount,
+                    'totalTickets' => $totalTickets,
+                    'errors' => $errors,
+                    'redirectUrl' => route('support.index', ['tab' => $processedCount > 0 ? 'needs_review' : 'pending']),
+                ])
+            );
+        });
+    }
+
     public function createLinear(string $id, Request $request, LinearClient $client, LinearMapper $mapper): \Illuminate\Http\RedirectResponse
     {
         $ticket = SupportTicket::find($id);
@@ -362,7 +580,8 @@ class SupportTicketController extends Controller
                 ->with('error', 'Linear API is not configured');
         }
 
-        if ($ticket->linear_issue_url) {
+        // Permetre crear un issue real encara que hi hagi un dry-run
+        if ($ticket->linear_issue_url && $ticket->linear_issue_url !== 'dry-run') {
             return redirect()->route('support.show', $id)
                 ->with('info', 'This ticket already has a Linear issue created.');
         }
