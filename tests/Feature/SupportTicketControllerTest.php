@@ -85,7 +85,7 @@ test('process runs workflow and redirects to agents page', function () {
         ->assertSessionHas('workflow_result');
 });
 
-test('process updates ticket status after workflow', function () {
+test('process updates ticket status to in_review when processed but not escalated', function () {
     $ticket = SupportTicket::factory()->create([
         'id' => 'TKT-001',
         'title' => 'Test Ticket',
@@ -113,10 +113,10 @@ test('process updates ticket status after workflow', function () {
     $this->post(route('support.process', $ticket->id));
 
     $ticket->refresh();
-    expect($ticket->status)->toBe('processed');
+    expect($ticket->status)->toBe('in_review');
 });
 
-test('process updates ticket status to in_review when escalated', function () {
+test('process updates ticket status to processed when escalated', function () {
     $ticket = SupportTicket::factory()->create([
         'id' => 'TKT-001',
         'title' => 'Test Ticket',
@@ -146,7 +146,7 @@ test('process updates ticket status to in_review when escalated', function () {
     $this->post(route('support.process', $ticket->id));
 
     $ticket->refresh();
-    expect($ticket->status)->toBe('in_review');
+    expect($ticket->status)->toBe('processed');
     expect($ticket->linear_issue_url)->toBe('https://linear.app/issue/123');
     expect($ticket->linear_issue_id)->toBe('linear-issue-id-123');
 });
