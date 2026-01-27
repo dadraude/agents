@@ -5,7 +5,7 @@ use App\Http\Controllers\SupportTicketController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('landing');
 });
 
 Route::prefix('support')->name('support.')->group(function () {
