@@ -46,33 +46,55 @@
             <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Actions</h2>
                 <div class="flex flex-col gap-3">
-                    @if($ticket->status !== 'processed')
-                        <form id="process-form" action="{{ route('support.processStream', $ticket->id) }}" method="POST">
-                            @csrf
-                            <button type="submit" id="process-button" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
+                    <form id="process-form" action="{{ route('support.processStream', $ticket->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" id="process-button" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            @if($ticket->status === 'processed' || $ticket->status === 'in_review')
+                                Reprocess with AI agents
+                            @else
                                 Process with AI agents
-                            </button>
-                        </form>
+                            @endif
+                        </button>
+                    </form>
+                    @if($ticket->status === 'processed' || $ticket->incidentRuns->isNotEmpty())
+                        <a href="{{ route('support.agents', $ticket->id) }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            View processing results
+                        </a>
                     @endif
                     @php
                         $linearClient = app(\App\Integrations\Linear\LinearClient::class);
                     @endphp
                     @if($linearClient->isConfigured())
                         @if($ticket->linear_issue_url)
-                            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                                <p class="text-sm text-green-800 dark:text-green-200 mb-2">
-                                    Linear issue created
-                                </p>
-                                <a href="{{ $ticket->linear_issue_url }}" target="_blank" class="inline-flex items-center gap-2 text-sm text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium">
-                                    View issue in Linear
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                    </svg>
-                                </a>
-                            </div>
+                            @if($ticket->linear_issue_url === 'dry-run')
+                                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                    <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-2">
+                                        ⚠️ Linear issue created (dry run)
+                                    </p>
+                                    <p class="text-xs text-yellow-700 dark:text-yellow-300">
+                                        Linear API key not configured. This is a dry run - no actual issue was created in Linear.
+                                    </p>
+                                </div>
+                            @else
+                                <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                                    <p class="text-sm text-green-800 dark:text-green-200 mb-2">
+                                        Linear issue created
+                                    </p>
+                                    <a href="{{ $ticket->linear_issue_url }}" target="_blank" class="inline-flex items-center gap-2 text-sm text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 font-medium">
+                                        View issue in Linear
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                        </svg>
+                                    </a>
+                                </div>
+                            @endif
                         @else
                             <form action="{{ route('support.createLinear', $ticket->id) }}" method="POST">
                                 @csrf
@@ -133,12 +155,16 @@
                         <div>
                             <dt class="text-xs text-gray-500 dark:text-gray-400">Linear Issue</dt>
                             <dd class="text-sm font-medium text-gray-900 dark:text-white">
-                                <a href="{{ $ticket->linear_issue_url }}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 inline-flex items-center gap-1">
-                                    View in Linear
-                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                    </svg>
-                                </a>
+                                @if($ticket->linear_issue_url === 'dry-run')
+                                    <span class="text-yellow-600 dark:text-yellow-400">Dry run (no API key)</span>
+                                @else
+                                    <a href="{{ $ticket->linear_issue_url }}" target="_blank" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 inline-flex items-center gap-1">
+                                        View in Linear
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                        </svg>
+                                    </a>
+                                @endif
                             </dd>
                         </div>
                     @endif
@@ -185,8 +211,7 @@
         </div>
     </div>
 
-    @if($ticket->status !== 'processed')
-        <script>
+    <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const processForm = document.getElementById('process-form');
                 const processButton = document.getElementById('process-button');
@@ -555,7 +580,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
-                                        Confirm and view results
+                                        View results
                                     </button>
                                     <button onclick="document.getElementById('loading-overlay').remove(); document.getElementById('process-button').disabled = false; document.getElementById('process-button').classList.remove('opacity-50', 'cursor-not-allowed');" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors">
                                         Close
@@ -591,5 +616,4 @@
                 }
             });
         </script>
-    @endif
 @endsection
