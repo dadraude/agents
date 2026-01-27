@@ -59,10 +59,18 @@ class LinearWriterNeuronAgent extends BaseNeuronAgent
 
         // Dry run si no tens API key configurada
         if (! $this->client->isConfigured()) {
+            // Marcar com a creat amb valors ficticis per indicar que és un dry run
+            $state->linearIssueId = 'dry-run';
+            $state->linearIssueUrl = 'dry-run';
+
             $this->addTrace($state, [
                 'dryRun' => true,
-                'message' => 'LINEAR_API_KEY missing. Skipping ticket creation.',
+                'message' => 'LINEAR_API_KEY missing. Skipping ticket creation (dry run).',
                 'payload' => $payload,
+                'issue' => [
+                    'id' => 'dry-run',
+                    'url' => 'dry-run',
+                ],
             ], false);
 
             return $state;
