@@ -174,11 +174,22 @@
                                             @endif
                                         @endif
                                     </div>
-                                    <a href="{{ route('support.show', $ticket->id) }}" class="block">
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 dark:hover:text-blue-400">
-                                            {{ $ticket->title ?? 'No title' }}
-                                        </h3>
-                                    </a>
+                                    <div class="flex items-start justify-between gap-2">
+                                        <a href="{{ route('support.show', $ticket->id) }}" class="block flex-1">
+                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2 hover:text-blue-600 dark:hover:text-blue-400">
+                                                {{ $ticket->title ?? 'No title' }}
+                                            </h3>
+                                        </a>
+                                        @if($ticket->status === 'processed')
+                                            <a href="{{ route('support.agents', $ticket->id) }}" class="flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 rounded transition-colors" title="View processing results">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                                Results
+                                            </a>
+                                        @endif
+                                    </div>
                                     <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
                                         {{ $ticket->description ?? 'No description' }}
                                     </p>
@@ -209,12 +220,18 @@
                                                     {{ $reviewInfo['reason'] }}
                                                 </p>
                                                 @if($reviewInfo['type'] === 'escalated' && isset($reviewInfo['data']['linear_issue_url']))
-                                                    <a href="{{ $reviewInfo['data']['linear_issue_url'] }}" target="_blank" class="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                                                        View Linear Issue
-                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                                        </svg>
-                                                    </a>
+                                                    @if($reviewInfo['data']['linear_issue_url'] === 'dry-run')
+                                                        <span class="mt-2 inline-flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                                                            Dry run (no API key)
+                                                        </span>
+                                                    @else
+                                                        <a href="{{ $reviewInfo['data']['linear_issue_url'] }}" target="_blank" class="mt-2 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                                                            View Linear Issue
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                                            </svg>
+                                                        </a>
+                                                    @endif
                                                 @endif
                                                 @if($reviewInfo['type'] === 'needs_more_info' && !empty($reviewInfo['data']))
                                                     <ul class="mt-2 list-disc list-inside text-xs
@@ -302,45 +319,248 @@
                 });
 
                 document.getElementById('tickets-form').addEventListener('submit', function(e) {
-                    const selectedCount = document.querySelectorAll('.ticket-checkbox:checked').length;
+                    e.preventDefault();
+                    
+                    const checkedBoxes = document.querySelectorAll('.ticket-checkbox:checked');
+                    const selectedCount = checkedBoxes.length;
+                    
                     if (selectedCount === 0) {
-                        e.preventDefault();
                         alert('Please select at least one ticket to process.');
                         return false;
                     }
                     
-                    // Show loading overlay
-                    showLoadingOverlay();
+                    // Get selected ticket IDs
+                    const ticketIds = Array.from(checkedBoxes).map(cb => cb.value);
+                    console.log('Processing tickets:', ticketIds);
+                    
+                    // Show progress overlay with streaming
+                    showProgressOverlay(ticketIds);
                 });
 
                 updateSelectedCount();
             });
 
-            function showLoadingOverlay() {
-                // Create overlay
+            function showProgressOverlay(ticketIds) {
+                // Get ticket titles for display
+                const ticketElements = ticketIds.map(id => {
+                    const checkbox = document.querySelector(`.ticket-checkbox[value="${id}"]`);
+                    const ticketCard = checkbox?.closest('.bg-white, .dark\\:bg-gray-800');
+                    const titleElement = ticketCard?.querySelector('h3');
+                    return {
+                        id: id,
+                        title: titleElement?.textContent?.trim() || `Ticket #${id}`,
+                    };
+                });
+
+                // Create overlay with progress tracking
                 const overlay = document.createElement('div');
-                overlay.id = 'loading-overlay';
-                overlay.className = 'fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center';
-                overlay.innerHTML = `
-                    <div class="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-xl max-w-md w-full mx-4">
-                        <div class="flex flex-col items-center gap-4">
-                            <div class="relative w-16 h-16">
-                                <div class="absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full"></div>
-                                <div class="absolute inset-0 border-4 border-blue-600 dark:border-blue-400 rounded-full border-t-transparent animate-spin"></div>
+                overlay.id = 'progress-overlay';
+                overlay.className = 'fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center p-4 overflow-y-auto';
+                
+                const ticketProgressHtml = ticketElements.map(ticket => `
+                    <div class="ticket-progress-item" data-ticket-id="${ticket.id}">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex-1">
+                                <h4 class="text-sm font-semibold text-gray-900 dark:text-white">${ticket.title}</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Ticket #${ticket.id}</p>
                             </div>
-                            <div class="text-center">
-                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Processing tickets...</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Please wait while the AI agents process your selected tickets.</p>
+                            <div class="ticket-status ml-4">
+                                <span class="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">Waiting...</span>
+                            </div>
+                        </div>
+                        <div class="ticket-agents mt-2 space-y-1"></div>
+                    </div>
+                `).join('');
+
+                overlay.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-3xl w-full mx-4 my-8">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Processing Tickets</h3>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">
+                                    <span class="processed-count">0</span> / <span class="total-count">${ticketIds.length}</span> completed
+                                </div>
+                            </div>
+                            <div class="space-y-4 max-h-96 overflow-y-auto">
+                                ${ticketProgressHtml}
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                <button id="close-overlay" class="hidden w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    Close
+                                </button>
                             </div>
                         </div>
                     </div>
                 `;
                 document.body.appendChild(overlay);
-                
+
                 // Disable form elements
                 document.getElementById('process-selected').disabled = true;
-                document.querySelectorAll('.ticket-checkbox').forEach(cb => cb.disabled = true);
                 document.getElementById('select-all').disabled = true;
+                document.querySelectorAll('.ticket-checkbox').forEach(cb => cb.disabled = true);
+
+                // Connect to stream
+                connectToBatchStream(ticketIds, overlay);
+            }
+
+            function connectToBatchStream(ticketIds, overlay) {
+                const formData = new FormData();
+                formData.append('_token', document.querySelector('input[name="_token"]').value);
+                ticketIds.forEach(id => formData.append('ticket_ids[]', id));
+
+                fetch('{{ route("support.processBatchStream") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'text/event-stream',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: formData,
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to start stream');
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    const agentOrder = ['Interpreter', 'Classifier', 'Validator', 'Prioritizer', 'DecisionMaker', 'LinearWriter'];
+
+                    function readStream() {
+                        reader.read().then(({ done, value }) => {
+                            if (done) {
+                                return;
+                            }
+
+                            buffer += decoder.decode(value, { stream: true });
+                            const parts = buffer.split('\n\n');
+                            buffer = parts.pop() || '';
+
+                            parts.forEach(part => {
+                                if (!part.trim()) return;
+
+                                let eventType = null;
+                                let data = '';
+
+                                part.split('\n').forEach(line => {
+                                    if (line.startsWith('event: ')) {
+                                        eventType = line.substring(7).trim();
+                                    } else if (line.startsWith('data: ')) {
+                                        data += (data ? '\n' : '') + line.substring(6);
+                                    }
+                                });
+
+                                if (eventType && data) {
+                                    try {
+                                        const parsed = JSON.parse(data);
+
+                                        if (eventType === 'batch-start') {
+                                            overlay.querySelector('.total-count').textContent = parsed.totalTickets;
+                                        } else if (eventType === 'ticket-start') {
+                                            updateTicketStatus(overlay, parsed.ticketId, 'processing', 'Processing...');
+                                        } else if (eventType === 'ticket-agent-progress') {
+                                            updateTicketAgentProgress(overlay, parsed.ticketId, parsed.agent, parsed.status, parsed.decision);
+                                        } else if (eventType === 'ticket-complete') {
+                                            updateTicketStatus(overlay, parsed.ticketId, 'completed', 'Completed');
+                                            overlay.querySelector('.processed-count').textContent = parsed.processedCount;
+                                        } else if (eventType === 'ticket-error') {
+                                            updateTicketStatus(overlay, parsed.ticketId, 'error', 'Error: ' + parsed.error);
+                                        } else if (eventType === 'batch-complete') {
+                                            overlay.querySelector('.processed-count').textContent = parsed.processedCount;
+                                            const closeButton = overlay.querySelector('#close-overlay');
+                                            closeButton.classList.remove('hidden');
+                                            closeButton.addEventListener('click', () => {
+                                                overlay.remove();
+                                                window.location.href = parsed.redirectUrl;
+                                            });
+                                        }
+                                    } catch (e) {
+                                        console.error('Error parsing event data:', e, data);
+                                    }
+                                }
+                            });
+
+                            readStream();
+                        }).catch(error => {
+                            console.error('Stream error:', error);
+                            updateBatchError(overlay, 'Error reading stream: ' + error.message);
+                        });
+                    }
+
+                    readStream();
+                })
+                .catch(error => {
+                    console.error('Error connecting to stream:', error);
+                    updateBatchError(overlay, 'Failed to connect to processing stream');
+                });
+            }
+
+            function updateTicketStatus(overlay, ticketId, status, statusText) {
+                const ticketItem = overlay.querySelector(`[data-ticket-id="${ticketId}"]`);
+                if (!ticketItem) return;
+
+                const statusEl = ticketItem.querySelector('.ticket-status span');
+                if (statusEl) {
+                    statusEl.textContent = statusText;
+                    statusEl.className = 'text-xs px-2 py-1 rounded-full';
+                    if (status === 'processing') {
+                        statusEl.className += ' bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+                    } else if (status === 'completed') {
+                        statusEl.className += ' bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+                    } else if (status === 'error') {
+                        statusEl.className += ' bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+                    } else {
+                        statusEl.className += ' bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400';
+                    }
+                }
+            }
+
+            function updateTicketAgentProgress(overlay, ticketId, agentName, status, decision) {
+                const ticketItem = overlay.querySelector(`[data-ticket-id="${ticketId}"]`);
+                if (!ticketItem) return;
+
+                let agentsContainer = ticketItem.querySelector('.ticket-agents');
+                if (!agentsContainer) {
+                    agentsContainer = document.createElement('div');
+                    agentsContainer.className = 'ticket-agents mt-2 space-y-1';
+                    ticketItem.appendChild(agentsContainer);
+                }
+
+                let agentEl = agentsContainer.querySelector(`[data-agent="${agentName}"]`);
+                if (!agentEl) {
+                    agentEl = document.createElement('div');
+                    agentEl.className = 'flex items-center gap-2 text-xs';
+                    agentEl.setAttribute('data-agent', agentName);
+                    agentsContainer.appendChild(agentEl);
+                }
+
+                const statusClass = status === 'processing' 
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                    : status === 'completed'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                    : status === 'bypassed'
+                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+
+                agentEl.innerHTML = `
+                    <span class="w-2 h-2 rounded-full ${status === 'processing' ? 'bg-blue-500 animate-pulse' : status === 'completed' ? 'bg-green-500' : status === 'bypassed' ? 'bg-yellow-500' : 'bg-gray-400'}"></span>
+                    <span class="font-medium">${agentName}:</span>
+                    <span class="px-2 py-0.5 rounded ${statusClass}">${status}</span>
+                    ${decision ? `<span class="text-gray-600 dark:text-gray-400 italic">${decision}</span>` : ''}
+                `;
+            }
+
+            function updateBatchError(overlay, errorMessage) {
+                const errorEl = document.createElement('div');
+                errorEl.className = 'mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg';
+                errorEl.innerHTML = `
+                    <p class="text-sm text-red-800 dark:text-red-200">${errorMessage}</p>
+                    <button onclick="this.closest('#progress-overlay').remove(); window.location.reload();" class="mt-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                        Close
+                    </button>
+                `;
+                overlay.querySelector('.space-y-4').appendChild(errorEl);
             }
         </script>
     @endif
