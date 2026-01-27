@@ -26,7 +26,7 @@ This project implements a multi-agent system that processes Customer Experience 
 
 ## 📋 Requirements
 
-- PHP 8.2 or higher
+- PHP 8.4.16 or higher
 - Composer
 - Node.js and NPM
 - Database (MySQL, PostgreSQL, SQLite)
@@ -69,11 +69,48 @@ php artisan migrate
 ```
 
 6. (Optional) Configure AI services in `.env`:
+
+**Global AI Configuration:**
 ```env
-NEURON_AI_USE_LLM=true
-NEURON_AI_DEFAULT_PROVIDER=anthropic
-NEURON_AI_PROVIDERS_ANTHROPIC_KEY=your_api_key
-NEURON_AI_PROVIDERS_ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+# Enable/disable LLM processing globally (default: false)
+AI_USE_LLM=true
+
+# Select the default AI provider (anthropic, openai, gemini, mistral, ollama)
+NEURON_AI_PROVIDER=anthropic
+
+# Timeout and retry settings
+NEURON_AI_TIMEOUT=30
+NEURON_AI_RETRIES=2
+```
+
+**Anthropic (Claude) Configuration:**
+```env
+ANTHROPIC_KEY=your_api_key
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+```
+
+**OpenAI Configuration:**
+```env
+OPENAI_KEY=your_api_key
+OPENAI_MODEL=gpt-4
+```
+
+**Google Gemini Configuration:**
+```env
+GEMINI_API_KEY=your_api_key
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+**Mistral AI Configuration:**
+```env
+MISTRAL_KEY=your_api_key
+MISTRAL_MODEL=mistral-small-latest
+```
+
+**Ollama (Local) Configuration:**
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama2
 ```
 
 7. (Optional) Configure Linear in `.env`:
@@ -109,10 +146,24 @@ Once the server is started, access the URL shown by Laravel (default `http://loc
 
 Access `/settings` to configure:
 
-- Enable/disable individual agents
-- Choose between AI or predefined rules for each agent
-- Configure AI providers
-- Configure Linear integration
+**Agent Activation:**
+- Enable/disable individual agents in the workflow
+- Disabled agents will be bypassed during processing
+
+**LLM Configuration per Agent:**
+Each agent can be configured individually to use:
+- **Global**: Uses the default configuration from `AI_USE_LLM` environment variable
+- **LLM**: Always uses AI processing for this agent (requires API keys)
+- **Heuristic**: Always uses predefined rules (faster, no API keys needed)
+
+This allows you to:
+- Use AI only for complex agents while using heuristics for simpler ones
+- Test different configurations without changing environment variables
+- Optimize costs by using AI selectively
+
+**External Services:**
+- Configure AI provider API keys in `.env` (see Installation section)
+- Configure Linear integration (API key and team ID)
 
 ## 🏗️ Architecture
 

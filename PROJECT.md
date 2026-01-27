@@ -429,41 +429,59 @@ El sistema ofrece flexibilidad para adaptarse a diferentes necesidades mediante 
 
 ### 9.1 Configuración de Agentes
 
-Cada agente puede configurarse individualmente:
+Cada agente puede configurarse individualmente a través de la interfaz web en `/settings`:
 
 - **Activación/desactivación**: 
   - Se puede desactivar cualquier agente si no se necesita
+  - Los agentes desactivados se omiten durante el procesamiento
   - Útil para probar el sistema con diferentes combinaciones
   - Permite crear flujos personalizados
 
 - **Elección de método de procesamiento**:
-  - **Reglas predefinidas (heurísticas)**: 
-    - Más rápidas y no requieren configuración adicional
-    - Basadas en patrones y palabras clave
-    - Útiles para casos simples y predecibles
+  Cada agente puede configurarse con una de estas tres opciones:
   
-  - **Inteligencia artificial (LLM)**:
-    - Más precisas y capaces de entender contexto
-    - Requieren configuración de claves de API
-    - Útiles para casos complejos o ambiguos
+  - **Global**: 
+    - Usa la configuración global del sistema
+    - Permite cambiar el comportamiento de todos los agentes desde un solo lugar
+  
+  - **LLM (Inteligencia Artificial)**:
+    - Siempre usa procesamiento con IA para este agente específico
+    - Más preciso y capaz de entender contexto complejo
+    - Requiere configuración de claves de API del proveedor seleccionado
+    - Útil para agentes que requieren análisis más sofisticados
+  
+  - **Heurístico (Reglas predefinidas)**:
+    - Siempre usa reglas predefinidas para este agente
+    - Más rápido y no requiere configuración adicional
+    - Basado en patrones y palabras clave
+    - Útil para casos simples y predecibles
+    - Reduce costes al no hacer llamadas a APIs
 
-- **Configuración global o individual**:
-  - Se puede configurar globalmente para todos los agentes
-  - O configurar cada agente individualmente según sus necesidades
+- **Configuración por agente individual**:
+  - La configuración se guarda en la base de datos
+  - Cada agente puede usar la configuración global o tener su propia configuración específica
+  - Esto permite optimizar el uso de IA según las necesidades de cada agente
 
 ### 9.2 Configuración de Servicios Externos
 
-El sistema permite configurar múltiples servicios:
+El sistema permite configurar múltiples servicios externos:
 
 - **Proveedores de IA**:
-  - Se puede elegir entre diferentes proveedores (Anthropic, OpenAI, Google, Mistral, Ollama)
-  - Cada proveedor requiere su propia clave de API
-  - Se puede cambiar el proveedor según las necesidades o disponibilidad
+  El sistema soporta múltiples proveedores de inteligencia artificial, cada uno con sus propias características:
+  
+  - **Anthropic (Claude)**: Modelo avanzado con excelente comprensión del contexto
+  - **OpenAI (ChatGPT)**: Ampliamente utilizado con buenos resultados en análisis de texto
+  - **Google Gemini**: Modelo eficiente con buena relación calidad-velocidad
+  - **Mistral AI**: Alternativa europea con buen rendimiento
+  - **Ollama**: Permite ejecutar modelos localmente sin necesidad de APIs externas
+
+  Se puede cambiar el proveedor según las necesidades o disponibilidad. Solo es necesario configurar las credenciales del proveedor que se vaya a utilizar. Para más detalles sobre la configuración técnica, consulta el README.md.
 
 - **Linear**:
   - Configuración de la clave de API de Linear
   - Selección del equipo donde se crearán los tickets
   - El sistema verifica la configuración antes de intentar crear tickets
+  - Para más detalles sobre la configuración técnica, consulta el README.md
 
 ### 9.3 Ventajas de la Configuración Flexible
 
@@ -553,7 +571,7 @@ La integración con Linear y el uso de inteligencia artificial para comprender e
 ### Stack Tecnológico Principal
 
 - **Laravel 12**: Framework web en PHP para la construcción de la aplicación
-- **PHP 8.2+**: Lenguaje de programación del servidor
+- **PHP 8.4.16+**: Lenguaje de programación del servidor
 - **Neuron AI**: Sistema de integración con modelos de lenguaje
 - **Linear API**: Integración con la herramienta de gestión de proyectos
 - **Base de datos relacional**: Para almacenamiento de tickets y configuraciones
