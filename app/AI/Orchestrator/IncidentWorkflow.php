@@ -120,8 +120,26 @@ class IncidentWorkflow
                 $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'processing');
                 Log::info('Workflow step: LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true']);
                 $state = $this->getAgent(LinearWriterAgent::class, LinearWriterNeuronAgent::class)->handle($state);
-                $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'completed');
-                $status = 'escalated';
+
+                // Check if Linear issue was actually created
+                if (! empty($state->linearIssueUrl)) {
+                    $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'completed');
+                    $status = 'escalated';
+                    Log::info('Linear issue created successfully', [
+                        'linear_issue_id' => $state->linearIssueId,
+                        'linear_issue_url' => $state->linearIssueUrl,
+                    ]);
+                } else {
+                    // Linear issue creation failed - still escalate but log warning
+                    $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'completed');
+                    $status = 'escalated';
+                    Log::warning('Linear issue creation failed but ticket still escalated', [
+                        'should_escalate' => $state->shouldEscalate,
+                        'linear_configured' => NeuronConfig::isConfigured(),
+                    ]);
+                    // Add error message to state for UI display
+                    $state->decisionReason = ($state->decisionReason ?? 'Ticket escalated to agents.').' Warning: Linear issue could not be created.';
+                }
             }
         } else {
             $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'skipped');
@@ -289,9 +307,28 @@ class IncidentWorkflow
                 yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'processing'];
                 Log::info('Workflow step: LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true']);
                 $state = $this->getAgent(LinearWriterAgent::class, LinearWriterNeuronAgent::class)->handle($state);
-                $decision = $this->getAgentDecisionSummary('LinearWriter', $state);
-                yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
-                $status = 'escalated';
+
+                // Check if Linear issue was actually created
+                if (! empty($state->linearIssueUrl)) {
+                    $decision = $this->getAgentDecisionSummary('LinearWriter', $state);
+                    yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
+                    $status = 'escalated';
+                    Log::info('Linear issue created successfully', [
+                        'linear_issue_id' => $state->linearIssueId,
+                        'linear_issue_url' => $state->linearIssueUrl,
+                    ]);
+                } else {
+                    // Linear issue creation failed - still escalate but log warning
+                    $decision = 'Failed to create Linear issue';
+                    yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
+                    $status = 'escalated';
+                    Log::warning('Linear issue creation failed but ticket still escalated', [
+                        'should_escalate' => $state->shouldEscalate,
+                        'linear_configured' => NeuronConfig::isConfigured(),
+                    ]);
+                    // Add error message to state for UI display
+                    $state->decisionReason = ($state->decisionReason ?? 'Ticket escalated to agents.').' Warning: Linear issue could not be created.';
+                }
             }
         } else {
             yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'skipped'];
