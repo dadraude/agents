@@ -56,13 +56,37 @@
                     <p class="text-sm text-blue-800 dark:text-blue-300">
                         {{ $message }}
                     </p>
-                    @if(isset($workflowResult['state']['linearIssueUrl']))
-                        <a href="{{ $workflowResult['state']['linearIssueUrl'] }}" target="_blank" class="mt-3 inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                            View issue in Linear
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                            </svg>
-                        </a>
+                    @if(isset($workflowResult['state']['linearIssueUrl']) && !empty($workflowResult['state']['linearIssueUrl']))
+                        @if($workflowResult['state']['linearIssueUrl'] === 'dry-run')
+                            <div class="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                <p class="text-sm text-yellow-800 dark:text-yellow-200 font-medium mb-1">⚠️ Linear Issue Created (Dry Run)</p>
+                                <p class="text-xs text-yellow-700 dark:text-yellow-300">
+                                    Linear API key not configured. This is a dry run - no actual issue was created in Linear.
+                                </p>
+                            </div>
+                        @else
+                            <a href="{{ $workflowResult['state']['linearIssueUrl'] }}" target="_blank" class="mt-3 inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                                View issue in Linear
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                </svg>
+                            </a>
+                        @endif
+                    @else
+                        <div class="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                            <p class="text-sm text-yellow-800 dark:text-yellow-200 font-medium mb-1">⚠️ Linear Issue Not Created</p>
+                            <p class="text-xs text-yellow-700 dark:text-yellow-300">
+                                The ticket was escalated but the Linear issue could not be created. This may be due to:
+                            </p>
+                            <ul class="mt-1 text-xs text-yellow-700 dark:text-yellow-300 list-disc list-inside">
+                                <li>Linear API key not configured</li>
+                                <li>API error or connection issue</li>
+                                <li>LinearWriter agent bypassed</li>
+                            </ul>
+                            <p class="mt-2 text-xs text-yellow-700 dark:text-yellow-300">
+                                You can manually create a Linear issue from the ticket details page.
+                            </p>
+                        </div>
                     @endif
                 </div>
             @endif
