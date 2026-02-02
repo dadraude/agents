@@ -86,16 +86,11 @@ abstract class BaseNeuronAgent extends Agent implements AgentInterface
             return $state;
         }
 
-        // Check if this agent should use LLM (agent-specific or global setting)
-        $shouldUseLLM = NeuronConfig::shouldUseLLMForAgent($this->name());
-        $globalLLMEnabled = NeuronConfig::shouldUseLLM();
-
-        // If LLM is not enabled for this agent or not configured, fallback to heuristic agent
-        if (! $shouldUseLLM || ! NeuronConfig::isConfigured()) {
+        // If LLM is not enabled or not configured, fallback to heuristic agent
+        if (! NeuronConfig::shouldUseLLM() || ! NeuronConfig::isConfigured()) {
             Log::info('Agent falling back to heuristic (LLM not enabled or not configured)', [
                 'agent' => $this->name(),
-                'agent_llm_enabled' => $shouldUseLLM,
-                'global_llm_enabled' => $globalLLMEnabled,
+                'llm_enabled' => NeuronConfig::shouldUseLLM(),
                 'llm_configured' => NeuronConfig::isConfigured(),
             ]);
 
@@ -105,16 +100,11 @@ abstract class BaseNeuronAgent extends Agent implements AgentInterface
         // Log that we're using LLM (more visible)
         $providerName = NeuronConfig::getDefaultProvider();
         $model = NeuronConfig::getProviderModel($providerName);
-        $settings = \App\Models\AppSetting::get();
-        $agentSetting = $settings->shouldUseLLMForAgent($this->name());
-        $usingAgentSpecificConfig = $agentSetting !== null;
-
         Log::info('🤖 Using LLM for agent', [
             'agent' => $this->name(),
             'provider' => $providerName,
             'model' => $model,
             'method' => 'llm',
-            'config_source' => $usingAgentSpecificConfig ? 'agent_specific' : 'global',
         ]);
 
         try {

@@ -2,20 +2,7 @@
 
 namespace App\AI\Orchestrator;
 
-use App\AI\Agents\ClassifierAgent;
-use App\AI\Agents\DecisionMakerAgent;
-use App\AI\Agents\InterpreterAgent;
-use App\AI\Agents\LinearWriterAgent;
-use App\AI\Agents\PrioritizerAgent;
-use App\AI\Agents\ValidatorAgent;
 use App\AI\Config\NeuronConfig;
-use App\AI\Neuron\ClassifierNeuronAgent;
-use App\AI\Neuron\DecisionMakerNeuronAgent;
-use App\AI\Neuron\InterpreterNeuronAgent;
-use App\AI\Neuron\LinearWriterNeuronAgent;
-use App\AI\Neuron\PrioritizerNeuronAgent;
-use App\AI\Neuron\ValidatorNeuronAgent;
-use App\Models\AppSetting;
 use App\Models\IncidentRun;
 use Illuminate\Support\Facades\Log;
 
@@ -33,148 +20,47 @@ class IncidentWorkflow
             'llm_configured' => NeuronConfig::isConfigured(),
         ]);
 
-        $state = new IncidentState($text);
-        $settings = AppSetting::get();
+        $workflow = IncidentNeuronWorkflow::makeForText($text);
+        $handler = $workflow->start();
 
-        // 1) Interpreter
-        if ($settings->isBypassed('Interpreter')) {
-            $this->notifyProgress($progressCallback, 'Interpreter', 1, 6, 'bypassed');
-            Log::info('Workflow step: Interpreter bypassed', ['step' => 1, 'total_steps' => 6]);
-        } else {
-            $this->notifyProgress($progressCallback, 'Interpreter', 1, 6, 'processing');
-            Log::info('Workflow step: Interpreter', ['step' => 1, 'total_steps' => 6]);
-            $state = $this->getAgent(InterpreterAgent::class, InterpreterNeuronAgent::class)->handle($state);
-            $this->notifyProgress($progressCallback, 'Interpreter', 1, 6, 'completed');
-        }
-
-        // 2) Classifier
-        if ($settings->isBypassed('Classifier')) {
-            $this->notifyProgress($progressCallback, 'Classifier', 2, 6, 'bypassed');
-            Log::info('Workflow step: Classifier bypassed', ['step' => 2, 'total_steps' => 6]);
-        } else {
-            $this->notifyProgress($progressCallback, 'Classifier', 2, 6, 'processing');
-            Log::info('Workflow step: Classifier', ['step' => 2, 'total_steps' => 6]);
-            $state = $this->getAgent(ClassifierAgent::class, ClassifierNeuronAgent::class)->handle($state);
-            $this->notifyProgress($progressCallback, 'Classifier', 2, 6, 'completed');
-        }
-
-        // 3) Validator
-        if ($settings->isBypassed('Validator')) {
-            $this->notifyProgress($progressCallback, 'Validator', 3, 6, 'bypassed');
-            Log::info('Workflow step: Validator bypassed', ['step' => 3, 'total_steps' => 6]);
-        } else {
-            $this->notifyProgress($progressCallback, 'Validator', 3, 6, 'processing');
-            Log::info('Workflow step: Validator', ['step' => 3, 'total_steps' => 6]);
-            $state = $this->getAgent(ValidatorAgent::class, ValidatorNeuronAgent::class)->handle($state);
-            $this->notifyProgress($progressCallback, 'Validator', 3, 6, 'completed');
-        }
-
-        if (! $state->isSufficient) {
-            $status = 'needs_more_info';
-            $workflowTime = (microtime(true) - $workflowStartTime) * 1000;
-            $this->persistIfAvailable($text, $state, $status);
-
-            Log::info('Workflow completed (needs more info)', [
-                'status' => $status,
-                'total_execution_time_ms' => round($workflowTime, 2),
-                'missing_info' => $state->missingInfo,
-            ]);
-
-            $this->delay();
-
-            return [
-                'status' => $status,
-                'state' => $state->toArray(),
-            ];
-        }
-
-        // 4) Prioritizer
-        if ($settings->isBypassed('Prioritizer')) {
-            $this->notifyProgress($progressCallback, 'Prioritizer', 4, 6, 'bypassed');
-            Log::info('Workflow step: Prioritizer bypassed', ['step' => 4, 'total_steps' => 6]);
-        } else {
-            $this->notifyProgress($progressCallback, 'Prioritizer', 4, 6, 'processing');
-            Log::info('Workflow step: Prioritizer', ['step' => 4, 'total_steps' => 6]);
-            $state = $this->getAgent(PrioritizerAgent::class, PrioritizerNeuronAgent::class)->handle($state);
-            $this->notifyProgress($progressCallback, 'Prioritizer', 4, 6, 'completed');
-        }
-
-        // 5) Decision maker
-        if ($settings->isBypassed('DecisionMaker')) {
-            $this->notifyProgress($progressCallback, 'DecisionMaker', 5, 6, 'bypassed');
-            Log::info('Workflow step: DecisionMaker bypassed', ['step' => 5, 'total_steps' => 6]);
-        } else {
-            $this->notifyProgress($progressCallback, 'DecisionMaker', 5, 6, 'processing');
-            Log::info('Workflow step: DecisionMaker', ['step' => 5, 'total_steps' => 6]);
-            $state = $this->getAgent(DecisionMakerAgent::class, DecisionMakerNeuronAgent::class)->handle($state);
-            $this->notifyProgress($progressCallback, 'DecisionMaker', 5, 6, 'completed');
-        }
-
-        // 6) Linear writer
-        if ($state->shouldEscalate) {
-            if ($settings->isBypassed('LinearWriter')) {
-                $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'bypassed');
-                Log::info('Workflow step: LinearWriter bypassed', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true but agent bypassed']);
-                $status = 'escalated';
-            } else {
-                $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'processing');
-                Log::info('Workflow step: LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true']);
-                $state = $this->getAgent(LinearWriterAgent::class, LinearWriterNeuronAgent::class)->handle($state);
-
-                // Check if Linear issue was actually created
-                if (! empty($state->linearIssueUrl)) {
-                    $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'completed');
-                    $status = 'escalated';
-                    Log::info('Linear issue created successfully', [
-                        'linear_issue_id' => $state->linearIssueId,
-                        'linear_issue_url' => $state->linearIssueUrl,
-                    ]);
-                } else {
-                    // Linear issue creation failed - still escalate but log warning
-                    $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'completed');
-                    $status = 'escalated';
-                    Log::warning('Linear issue creation failed but ticket still escalated', [
-                        'should_escalate' => $state->shouldEscalate,
-                        'linear_configured' => NeuronConfig::isConfigured(),
-                    ]);
-                    // Add error message to state for UI display
-                    $state->decisionReason = ($state->decisionReason ?? 'Ticket escalated to agents.').' Warning: Linear issue could not be created.';
+        // If callback provided, iterate streamEvents to call callback
+        if ($progressCallback !== null) {
+            foreach ($handler->streamEvents() as $event) {
+                if (is_array($event) && isset($event['type']) && $event['type'] === 'agent-progress') {
+                    $this->notifyProgress(
+                        $progressCallback,
+                        $event['agent'] ?? '',
+                        $event['step'] ?? 0,
+                        $event['totalSteps'] ?? 6,
+                        $event['status'] ?? 'unknown'
+                    );
                 }
             }
-        } else {
-            $this->notifyProgress($progressCallback, 'LinearWriter', 6, 6, 'skipped');
-            Log::info('Workflow step: Skipping LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=false']);
-            $status = 'processed';
         }
 
+        $finalState = $handler->getResult();
+        $incidentData = $finalState->get('incident');
+        $incident = IncidentState::fromArray($incidentData);
+        $status = $finalState->get('status', 'processed');
+
         $workflowTime = (microtime(true) - $workflowStartTime) * 1000;
-        $run = $this->persistIfAvailable($text, $state, $status);
+        $run = $this->persistIfAvailable($text, $incident, $status);
 
         Log::info('Workflow completed', [
             'status' => $status,
             'total_execution_time_ms' => round($workflowTime, 2),
             'run_id' => $run?->id,
-            'linear_issue_id' => $state->linearIssueId,
-            'linear_issue_url' => $state->linearIssueUrl,
+            'linear_issue_id' => $incident->linearIssueId,
+            'linear_issue_url' => $incident->linearIssueUrl,
         ]);
 
-        // Delay al final per poder veure el resultat abans que es recarregui la pàgina
         $this->delay();
 
         return [
             'status' => $status,
             'run_id' => $run?->id,
-            'state' => $state->toArray(),
+            'state' => $incident->toArray(),
         ];
-    }
-
-    private function getAgent(string $heuristicClass, string $neuronClass): \App\AI\Contracts\AgentInterface
-    {
-        if (NeuronConfig::shouldUseLLM() && NeuronConfig::isConfigured()) {
-            return app($neuronClass);
-        }
-
-        return app($heuristicClass);
     }
 
     private function persistIfAvailable(string $text, IncidentState $state, string $status): ?IncidentRun
@@ -211,217 +97,50 @@ class IncidentWorkflow
             'llm_configured' => NeuronConfig::isConfigured(),
         ]);
 
-        $state = new IncidentState($text);
-        $settings = AppSetting::get();
+        $workflow = IncidentNeuronWorkflow::makeForText($text);
+        $handler = $workflow->start();
 
-        // 1) Interpreter
-        if ($settings->isBypassed('Interpreter')) {
-            yield 'agent-progress' => ['agent' => 'Interpreter', 'step' => 1, 'totalSteps' => 6, 'status' => 'bypassed'];
-            Log::info('Workflow step: Interpreter bypassed', ['step' => 1, 'total_steps' => 6]);
-        } else {
-            yield 'agent-progress' => ['agent' => 'Interpreter', 'step' => 1, 'totalSteps' => 6, 'status' => 'processing'];
-            Log::info('Workflow step: Interpreter', ['step' => 1, 'total_steps' => 6]);
-            $state = $this->getAgent(InterpreterAgent::class, InterpreterNeuronAgent::class)->handle($state);
-            $decision = $this->getAgentDecisionSummary('Interpreter', $state);
-            yield 'agent-progress' => ['agent' => 'Interpreter', 'step' => 1, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
-        }
+        $status = null;
+        $finalState = null;
 
-        // 2) Classifier
-        if ($settings->isBypassed('Classifier')) {
-            yield 'agent-progress' => ['agent' => 'Classifier', 'step' => 2, 'totalSteps' => 6, 'status' => 'bypassed'];
-            Log::info('Workflow step: Classifier bypassed', ['step' => 2, 'total_steps' => 6]);
-        } else {
-            yield 'agent-progress' => ['agent' => 'Classifier', 'step' => 2, 'totalSteps' => 6, 'status' => 'processing'];
-            Log::info('Workflow step: Classifier', ['step' => 2, 'total_steps' => 6]);
-            $state = $this->getAgent(ClassifierAgent::class, ClassifierNeuronAgent::class)->handle($state);
-            $decision = $this->getAgentDecisionSummary('Classifier', $state);
-            yield 'agent-progress' => ['agent' => 'Classifier', 'step' => 2, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
-        }
-
-        // 3) Validator
-        if ($settings->isBypassed('Validator')) {
-            yield 'agent-progress' => ['agent' => 'Validator', 'step' => 3, 'totalSteps' => 6, 'status' => 'bypassed'];
-            Log::info('Workflow step: Validator bypassed', ['step' => 3, 'total_steps' => 6]);
-        } else {
-            yield 'agent-progress' => ['agent' => 'Validator', 'step' => 3, 'totalSteps' => 6, 'status' => 'processing'];
-            Log::info('Workflow step: Validator', ['step' => 3, 'total_steps' => 6]);
-            $state = $this->getAgent(ValidatorAgent::class, ValidatorNeuronAgent::class)->handle($state);
-            $decision = $this->getAgentDecisionSummary('Validator', $state);
-            yield 'agent-progress' => ['agent' => 'Validator', 'step' => 3, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
-        }
-
-        if (! $state->isSufficient) {
-            $status = 'needs_more_info';
-            $workflowTime = (microtime(true) - $workflowStartTime) * 1000;
-            $run = $this->persistIfAvailable($text, $state, $status);
-
-            Log::info('Workflow completed (needs more info)', [
-                'status' => $status,
-                'total_execution_time_ms' => round($workflowTime, 2),
-                'missing_info' => $state->missingInfo,
-            ]);
-
-            // Delay al final per poder veure el resultat
-            $this->delay();
-
-            yield 'workflow-result' => [
-                'status' => $status,
-                'state' => $state->toArray(),
-                'run_id' => $run?->id,
-            ];
-
-            return;
-        }
-
-        // 4) Prioritizer
-        if ($settings->isBypassed('Prioritizer')) {
-            yield 'agent-progress' => ['agent' => 'Prioritizer', 'step' => 4, 'totalSteps' => 6, 'status' => 'bypassed'];
-            Log::info('Workflow step: Prioritizer bypassed', ['step' => 4, 'total_steps' => 6]);
-        } else {
-            yield 'agent-progress' => ['agent' => 'Prioritizer', 'step' => 4, 'totalSteps' => 6, 'status' => 'processing'];
-            Log::info('Workflow step: Prioritizer', ['step' => 4, 'total_steps' => 6]);
-            $state = $this->getAgent(PrioritizerAgent::class, PrioritizerNeuronAgent::class)->handle($state);
-            $decision = $this->getAgentDecisionSummary('Prioritizer', $state);
-            yield 'agent-progress' => ['agent' => 'Prioritizer', 'step' => 4, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
-        }
-
-        // 5) Decision maker
-        if ($settings->isBypassed('DecisionMaker')) {
-            yield 'agent-progress' => ['agent' => 'DecisionMaker', 'step' => 5, 'totalSteps' => 6, 'status' => 'bypassed'];
-            Log::info('Workflow step: DecisionMaker bypassed', ['step' => 5, 'total_steps' => 6]);
-        } else {
-            yield 'agent-progress' => ['agent' => 'DecisionMaker', 'step' => 5, 'totalSteps' => 6, 'status' => 'processing'];
-            Log::info('Workflow step: DecisionMaker', ['step' => 5, 'total_steps' => 6]);
-            $state = $this->getAgent(DecisionMakerAgent::class, DecisionMakerNeuronAgent::class)->handle($state);
-            $decision = $this->getAgentDecisionSummary('DecisionMaker', $state);
-            yield 'agent-progress' => ['agent' => 'DecisionMaker', 'step' => 5, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
-        }
-
-        // 6) Linear writer (si procedeix)
-        if ($state->shouldEscalate) {
-            if ($settings->isBypassed('LinearWriter')) {
-                yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'bypassed'];
-                Log::info('Workflow step: LinearWriter bypassed', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true but agent bypassed']);
-                $status = 'escalated';
-            } else {
-                yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'processing'];
-                Log::info('Workflow step: LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=true']);
-                $state = $this->getAgent(LinearWriterAgent::class, LinearWriterNeuronAgent::class)->handle($state);
-
-                // Check if Linear issue was actually created
-                if (! empty($state->linearIssueUrl)) {
-                    $decision = $this->getAgentDecisionSummary('LinearWriter', $state);
-                    yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
-                    $status = 'escalated';
-                    Log::info('Linear issue created successfully', [
-                        'linear_issue_id' => $state->linearIssueId,
-                        'linear_issue_url' => $state->linearIssueUrl,
-                    ]);
-                } else {
-                    // Linear issue creation failed - still escalate but log warning
-                    $decision = 'Failed to create Linear issue';
-                    yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'completed', 'decision' => $decision];
-                    $status = 'escalated';
-                    Log::warning('Linear issue creation failed but ticket still escalated', [
-                        'should_escalate' => $state->shouldEscalate,
-                        'linear_configured' => NeuronConfig::isConfigured(),
-                    ]);
-                    // Add error message to state for UI display
-                    $state->decisionReason = ($state->decisionReason ?? 'Ticket escalated to agents.').' Warning: Linear issue could not be created.';
+        foreach ($handler->streamEvents() as $event) {
+            if (is_array($event) && isset($event['type'])) {
+                if ($event['type'] === 'agent-progress') {
+                    // Map to the expected format
+                    yield 'agent-progress' => [
+                        'agent' => $event['agent'] ?? '',
+                        'step' => $event['step'] ?? 0,
+                        'totalSteps' => $event['totalSteps'] ?? 6,
+                        'status' => $event['status'] ?? 'unknown',
+                        'decision' => $event['decision'] ?? null,
+                    ];
                 }
             }
-        } else {
-            yield 'agent-progress' => ['agent' => 'LinearWriter', 'step' => 6, 'totalSteps' => 6, 'status' => 'skipped'];
-            Log::info('Workflow step: Skipping LinearWriter', ['step' => 6, 'total_steps' => 6, 'reason' => 'shouldEscalate=false']);
-            $status = 'processed';
         }
 
+        $finalState = $handler->getResult();
+        $incidentData = $finalState->get('incident');
+        $incident = IncidentState::fromArray($incidentData);
+        $status = $finalState->get('status', 'processed');
+
         $workflowTime = (microtime(true) - $workflowStartTime) * 1000;
-        $run = $this->persistIfAvailable($text, $state, $status);
+        $run = $this->persistIfAvailable($text, $incident, $status);
 
         Log::info('Workflow completed', [
             'status' => $status,
             'total_execution_time_ms' => round($workflowTime, 2),
             'run_id' => $run?->id,
-            'linear_issue_id' => $state->linearIssueId,
-            'linear_issue_url' => $state->linearIssueUrl,
+            'linear_issue_id' => $incident->linearIssueId,
+            'linear_issue_url' => $incident->linearIssueUrl,
         ]);
 
-        // Delay al final per poder veure el resultat abans que es recarregui la pàgina
         $this->delay();
 
         yield 'workflow-result' => [
             'status' => $status,
             'run_id' => $run?->id,
-            'state' => $state->toArray(),
+            'state' => $incident->toArray(),
         ];
-    }
-
-    private function getAgentDecisionSummary(string $agentName, IncidentState $state): ?string
-    {
-        switch ($agentName) {
-            case 'Interpreter':
-                if ($state->intent) {
-                    return "Intent: {$state->intent}";
-                }
-                if ($state->summary) {
-                    $summary = mb_strlen($state->summary) > 50 ? mb_substr($state->summary, 0, 50).'...' : $state->summary;
-
-                    return $summary;
-                }
-
-                return null;
-            case 'Classifier':
-                $parts = [];
-                if ($state->type) {
-                    $parts[] = $state->type;
-                }
-                if ($state->area) {
-                    $parts[] = strtoupper($state->area);
-                }
-
-                return count($parts) > 0 ? implode(' • ', $parts) : null;
-            case 'Validator':
-                if ($state->isSufficient === false) {
-                    $missing = count($state->missingInfo) > 0
-                        ? count($state->missingInfo).' missing'
-                        : 'Insufficient';
-
-                    return "Missing info: {$missing}";
-                }
-
-                return 'Sufficient info';
-            case 'Prioritizer':
-                if ($state->priorityScore !== null) {
-                    return 'Priority: '.number_format($state->priorityScore, 1);
-                }
-                if ($state->severity) {
-                    return "Severity: {$state->severity}/5";
-                }
-
-                return null;
-            case 'DecisionMaker':
-                if ($state->decisionReason) {
-                    $reason = mb_strlen($state->decisionReason) > 60
-                        ? mb_substr($state->decisionReason, 0, 60).'...'
-                        : $state->decisionReason;
-
-                    return $reason;
-                }
-                if ($state->shouldEscalate) {
-                    return 'Escalate to agents';
-                }
-
-                return 'Auto-process';
-            case 'LinearWriter':
-                if ($state->linearIssueUrl) {
-                    return 'Issue created';
-                }
-
-                return 'No issue needed';
-            default:
-                return null;
-        }
     }
 
     private function notifyProgress(?callable $callback, string $agentName, int $step, int $totalSteps, string $status): void

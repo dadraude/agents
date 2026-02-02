@@ -91,4 +91,35 @@ class IncidentState
             'trace' => $this->trace,
         ];
     }
+
+    public static function fromArray(array $data): self
+    {
+        $state = new self($data['rawText'] ?? '');
+
+        $state->summary = $data['summary'] ?? null;
+        $state->intent = $data['intent'] ?? null;
+        $state->entities = $data['entities'] ?? [];
+
+        $state->type = $data['type'] ?? null;
+        $state->area = $data['area'] ?? null;
+        $state->devRelated = $data['devRelated'] ?? null;
+
+        $state->isSufficient = $data['isSufficient'] ?? true;
+        $state->missingInfo = $data['missingInfo'] ?? [];
+
+        $state->impact = $data['impact'] ?? null;
+        $state->urgency = $data['urgency'] ?? null;
+        $state->severity = $data['severity'] ?? null;
+        $state->priorityScore = $data['priorityScore'] ?? null;
+
+        $state->shouldEscalate = $data['shouldEscalate'] ?? false;
+        $state->decisionReason = $data['decisionReason'] ?? null;
+
+        $state->linearIssueId = $data['linearIssueId'] ?? null;
+        $state->linearIssueUrl = $data['linearIssueUrl'] ?? null;
+
+        $state->trace = $data['trace'] ?? [];
+
+        return $state;
+    }
 }
