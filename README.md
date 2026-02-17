@@ -213,7 +213,7 @@ php artisan test
 
 ## 📚 Documentation
 
-For more details about the project, see [PROJECTE.md](PROJECTE.md).
+For more details about the project, see [PROJECT.md](PROJECT.md).
 
 ## 📝 License
 
