@@ -72,12 +72,10 @@ class NeuronConfig
             return false;
         }
 
-        // Check if provider has required key
         if (in_array($provider, ['anthropic', 'openai', 'gemini', 'mistral'], true)) {
             return ! empty($config['key']);
         }
 
-        // For Ollama, just check if base_url is set
         if ($provider === 'ollama') {
             return ! empty($config['base_url']);
         }
