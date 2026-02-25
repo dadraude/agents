@@ -33,7 +33,8 @@ on:
       - 'phpunit.xml'
       - 'tests/Pest.php'
       - 'vite.config.js'
-
+  workflow_dispatch:
+    
 concurrency:
   group: tests-${{ github.ref }}
   cancel-in-progress: true
